@@ -83,19 +83,20 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section
-        id="features"
-        className="mx-auto max-w-6xl px-6 py-16 grid gap-6 sm:grid-cols-3"
-      >
-        {features.map(({ icon: Icon, title, description }) => (
-          <Card key={title}>
-            <CardHeader>
-              <Icon className="size-6 text-primary mb-2" />
-              <CardTitle>{title}</CardTitle>
-              <CardDescription>{description}</CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
+      <section id="features" className="w-full">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <div className="grid gap-6 sm:grid-cols-3">
+            {features.map(({ icon: Icon, title, description }) => (
+              <Card key={title} className="w-full">
+                <CardHeader>
+                  <Icon className="size-6 text-primary mb-2" />
+                  <CardTitle>{title}</CardTitle>
+                  <CardDescription>{description}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Trust / Datenquellen */}
