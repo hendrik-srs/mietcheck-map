@@ -36,7 +36,7 @@ const sources = [
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex min-h-screen flex-col">
       {/* Top nav */}
       <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-10">
         <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
