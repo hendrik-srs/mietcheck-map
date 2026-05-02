@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Map, Scale, TrendingUp, ShieldCheck, Database, Code2 } from "lucide-react";
@@ -40,13 +42,21 @@ export default function Home() {
       {/* Top nav */}
       <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-10">
         <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-semibold">
+          <Link href="/" className="flex items-center gap-2 font-semibold">
             <Map className="size-5 text-primary" />
             MietCheck Map
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/karte"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Karte
+            </Link>
+            <Badge variant="secondary" className="text-xs">
+              in Entwicklung · v0.1
+            </Badge>
           </div>
-          <Badge variant="secondary" className="text-xs">
-            in Entwicklung · v0.1
-          </Badge>
         </div>
       </header>
 
@@ -64,12 +74,13 @@ export default function Home() {
           ausschließlich aus offiziellen Quellen.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row gap-3 sm:justify-start justify-center">
-          <a
-            href="#features"
-            className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          <Link
+            href="/karte"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            Mehr erfahren
-          </a>
+            <Map className="size-4" />
+            Karte ansehen
+          </Link>
           <a
             href="https://github.com/Hendrik-srs/mietcheck-map"
             target="_blank"
@@ -134,15 +145,21 @@ export default function Home() {
         <h2 className="text-2xl font-semibold tracking-tight mb-6">Roadmap</h2>
         <ol className="space-y-3 text-sm">
           {[
-            { state: "in Arbeit", text: "Datenpipeline für Berliner Mietspiegel & Open-Data-Quellen" },
-            { state: "geplant", text: "Interaktive Karte mit Bezirks-Heatmap" },
+            { state: "live", text: "Interaktive Karte der 12 Berliner Bezirke" },
+            { state: "in Arbeit", text: "Mietspiegel-2024-Daten als Heatmap auf der Karte" },
             { state: "geplant", text: "Fairness-Check mit Mietpreisbremsen-Berechnung" },
             { state: "geplant", text: "Trend-Charts pro Bezirk seit 2018" },
             { state: "später", text: "Erweiterung auf München, Hamburg, Köln" },
           ].map((item) => (
             <li key={item.text} className="flex gap-3 items-baseline">
               <Badge
-                variant={item.state === "in Arbeit" ? "default" : "outline"}
+                variant={
+                  item.state === "live"
+                    ? "default"
+                    : item.state === "in Arbeit"
+                      ? "secondary"
+                      : "outline"
+                }
                 className="shrink-0"
               >
                 {item.state}
