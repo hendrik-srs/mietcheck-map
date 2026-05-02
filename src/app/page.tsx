@@ -1,65 +1,175 @@
-import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Map, Scale, TrendingUp, ShieldCheck, Database, Code2 } from "lucide-react";
+
+const features = [
+  {
+    icon: Map,
+    title: "Interaktive Mietkarte",
+    description:
+      "Heatmap der durchschnittlichen Mietpreise pro Stadtteil — basierend auf qualifiziertem Mietspiegel und Marktberichten.",
+  },
+  {
+    icon: Scale,
+    title: "Fairness-Check",
+    description:
+      "Adresse, qm und aktuelle Miete eintragen. Sofort sehen, wie die Miete im Vergleich zum gesetzlichen Mietspiegel steht — inkl. Mietpreisbremse-Hinweis.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Mietentwicklung",
+    description:
+      "Historische Trends pro Bezirk seit 2018, automatisch aktualisiert. Verstehen, ob die eigene Miete im Markt-Trend liegt.",
+  },
+];
+
+const sources = [
+  "Berliner Mietspiegel",
+  "Amt für Statistik Berlin-Brandenburg",
+  "BBSR Wohnungsmarktbeobachtung",
+  "Destatis GENESIS-Online",
+  "Geschäftsberichte Vonovia, degewo, Howoge",
+  "Quartalsberichte CBRE, JLL",
+  "BORIS-D Bodenrichtwerte",
+  "Berlin Open Data",
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="flex flex-col flex-1">
+      {/* Top nav */}
+      <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-10">
+        <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2 font-semibold">
+            <Map className="size-5 text-primary" />
+            MietCheck Map
+          </div>
+          <Badge variant="secondary" className="text-xs">
+            in Entwicklung · v0.1
+          </Badge>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="mx-auto max-w-6xl px-6 pt-20 pb-16 text-center sm:text-left">
+        <Badge variant="outline" className="mb-6">
+          Berlin · weitere Städte folgen
+        </Badge>
+        <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight max-w-3xl">
+          Wohnst du <span className="text-primary">fair</span>?
+        </h1>
+        <p className="mt-6 text-lg text-muted-foreground max-w-2xl">
+          Die transparente Mietkarte für Berlin: rechtsverbindliche Vergleichsmieten,
+          Fairness-Check für deine eigene Wohnung und automatische Markt-Trends —
+          ausschließlich aus offiziellen Quellen.
+        </p>
+        <div className="mt-10 flex flex-col sm:flex-row gap-3 sm:justify-start justify-center">
+          <a
+            href="#features"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Mehr erfahren
+          </a>
+          <a
+            href="https://github.com/Hendrik-srs/mietcheck-map"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border px-6 text-sm font-medium hover:bg-accent transition-colors"
+          >
+            <Code2 className="size-4" />
+            Source auf GitHub
+          </a>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section
+        id="features"
+        className="mx-auto max-w-6xl px-6 py-16 grid gap-6 sm:grid-cols-3"
+      >
+        {features.map(({ icon: Icon, title, description }) => (
+          <Card key={title}>
+            <CardHeader>
+              <Icon className="size-6 text-primary mb-2" />
+              <CardTitle>{title}</CardTitle>
+              <CardDescription>{description}</CardDescription>
+            </CardHeader>
+          </Card>
+        ))}
+      </section>
+
+      {/* Trust / Datenquellen */}
+      <section className="bg-muted/30 border-y border-border/60">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldCheck className="size-5 text-primary" />
+            <span className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              Vollständig offizielle Datenherkunft
+            </span>
+          </div>
+          <h2 className="text-3xl font-semibold tracking-tight max-w-2xl">
+            Jeder Wert quellen-belegt. Kein Scraping, kein Schattendaten.
+          </h2>
+          <p className="mt-4 text-muted-foreground max-w-2xl">
+            Alle angezeigten Mieten stammen aus rechtssicheren, frei zugänglichen
+            Veröffentlichungen — automatisch aktualisiert, sobald neue Daten erscheinen.
           </p>
+          <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {sources.map((source) => (
+              <li
+                key={source}
+                className="flex items-start gap-2 text-sm rounded-md border border-border/60 bg-background px-3 py-2"
+              >
+                <Database className="size-4 text-muted-foreground mt-0.5 shrink-0" />
+                <span>{source}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Roadmap teaser */}
+      <section className="mx-auto max-w-6xl px-6 py-16">
+        <h2 className="text-2xl font-semibold tracking-tight mb-6">Roadmap</h2>
+        <ol className="space-y-3 text-sm">
+          {[
+            { state: "in Arbeit", text: "Datenpipeline für Berliner Mietspiegel & Open-Data-Quellen" },
+            { state: "geplant", text: "Interaktive Karte mit Bezirks-Heatmap" },
+            { state: "geplant", text: "Fairness-Check mit Mietpreisbremsen-Berechnung" },
+            { state: "geplant", text: "Trend-Charts pro Bezirk seit 2018" },
+            { state: "später", text: "Erweiterung auf München, Hamburg, Köln" },
+          ].map((item) => (
+            <li key={item.text} className="flex gap-3 items-baseline">
+              <Badge
+                variant={item.state === "in Arbeit" ? "default" : "outline"}
+                className="shrink-0"
+              >
+                {item.state}
+              </Badge>
+              <span>{item.text}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* Footer */}
+      <footer className="mt-auto border-t border-border/60">
+        <div className="mx-auto max-w-6xl px-6 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-sm text-muted-foreground">
+          <p>
+            MietCheck Map · Open-Source-Projekt · {new Date().getFullYear()}
+          </p>
+          <div className="flex gap-4">
+            <a
+              href="https://github.com/Hendrik-srs/mietcheck-map"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground inline-flex items-center gap-1"
+            >
+              <Code2 className="size-4" /> Source-Code
+            </a>
+          </div>
         </div>
-      </main>
+      </footer>
     </div>
   );
 }

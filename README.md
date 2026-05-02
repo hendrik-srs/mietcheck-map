@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MietCheck Map
 
-## Getting Started
+> Transparente Mietpreis-Karte für Deutschland — rechtsverbindliche Vergleichsmieten,
+> Fairness-Check und Trends, ausschließlich aus offiziellen Quellen.
 
-First, run the development server:
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20PostGIS-3ECF8E)](https://supabase.com/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+## Worum geht's?
+
+Mietkarten gibt es viele — die meisten basieren auf Inseratspreisen aus Plattformen
+wie ImmoScout24 oder immowelt. Das ist:
+
+- **rechtlich problematisch** (Scraping verstößt gegen AGB und Datenbankschutzrechte),
+- **nicht repräsentativ** (Inserate sind nur die obere, volatile Spitze des Marktes),
+- **nicht rechtsverbindlich** (für die Mietpreisbremse zählt der Mietspiegel).
+
+**MietCheck Map** macht das anders: Wir nutzen ausschließlich frei zugängliche,
+offizielle Quellen und legen jeden Datenpunkt transparent offen.
+
+## Features (geplant für V1)
+
+- 🗺️ **Interaktive Karte** mit Heatmap der durchschnittlichen Kaltmiete pro Bezirk
+- ⚖️ **Fairness-Check** — eigene Miete eingeben, sofort sehen, wo sie im Vergleich
+   zum gesetzlichen Mietspiegel steht (inkl. Mietpreisbremse-Hinweis)
+- 📈 **Trend-Charts** pro Bezirk seit 2018, automatisch aktualisiert
+- 🔍 **Quellen-Transparenz** — jeder Wert ist mit seiner Quelle verlinkt
+
+## Datenquellen (alle frei zugänglich)
+
+| Quelle | Granularität | Update |
+|---|---|---|
+| Berliner Mietspiegel (Senatsverwaltung) | Stadtteil/Straße | 2-jährlich |
+| Amt für Statistik Berlin-Brandenburg | Bezirk/PLZ | Quartalsweise |
+| BBSR Wohnungsmarktbeobachtung | Kreis | Quartalsweise |
+| Destatis GENESIS-API | Land/Region | Monatlich |
+| Geschäftsberichte Vonovia, degewo, Howoge, Gesobau | Bestand | Quartalsweise |
+| CBRE / JLL / immowelt-Marktberichte (öffentliche PDFs) | Bezirk | Quartalsweise |
+| BORIS-D Bodenrichtwerte | Grundstück | Jährlich |
+| Berlin Open Data | divers | divers |
+
+## Tech-Stack
+
+- **Frontend**: Next.js 16 (App Router), TypeScript, Tailwind CSS v4, shadcn/ui
+- **Karte**: MapLibre GL JS, react-map-gl
+- **Charts**: Recharts
+- **Backend**: Supabase (Postgres + PostGIS), RLS-protected
+- **Hosting**: Vercel
+- **CI/CD**: GitHub Actions (geplant für Datenpipeline-Cronjobs)
+
+## Lokale Entwicklung
+
+### Voraussetzungen
+
+- Node.js ≥ 20
+- Ein Supabase-Projekt (Region: Frankfurt empfohlen für DSGVO)
+
+### Setup
 
 ```bash
+git clone https://github.com/Hendrik-srs/mietcheck-map.git
+cd mietcheck-map
+npm install
+
+# Env-Variablen konfigurieren
+cp .env.example .env.local
+# Editiere .env.local mit deinen Supabase-Keys
+
+# Datenbank-Schema anwenden:
+# Supabase Dashboard -> SQL Editor -> Inhalt von supabase/migrations/*.sql ausführen
+
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App läuft dann auf [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+## Projekt-Struktur
 
-To learn more about Next.js, take a look at the following resources:
+```
+.
+├── src/
+│   ├── app/                    # Next.js App Router (Routes, Layouts)
+│   ├── components/ui/          # shadcn/ui Komponenten
+│   └── lib/
+│       └── supabase/           # Supabase client (browser, server, admin)
+├── supabase/
+│   └── migrations/             # SQL-Migrationen (chronologisch)
+└── public/                     # Statische Assets
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Roadmap
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [x] **Phase 1**: Projekt-Setup, Schema, Landing-Page
+- [ ] **Phase 2**: Datenpipeline (Mietspiegel-Parser, Open-Data-Ingestion)
+- [ ] **Phase 3**: Interaktive Karte mit Bezirks-Heatmap
+- [ ] **Phase 4**: Fairness-Check + Mietpreisbremse-Berechnung
+- [ ] **Phase 5**: Trend-Charts + Crowdsourcing-Layer
+- [ ] **Phase 6**: Erweiterung auf München, Hamburg, Köln
 
-## Deploy on Vercel
+## Lizenz
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+MIT — siehe [LICENSE](LICENSE).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Daten der zugrundeliegenden Quellen unterliegen den jeweiligen Lizenzen
+der Herausgeber (in der App pro Datenpunkt verlinkt).
