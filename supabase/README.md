@@ -21,3 +21,7 @@ Run in chronological order:
 
 1. `20260502_0001_initial_schema.sql` — PostGIS extension, cities, districts,
    data_sources, rent_data_points, RLS policies
+2. `20260502_0002_grant_privileges.sql` — Postgres GRANTs for anon,
+   authenticated, service_role (required because "auto-expose new tables"
+   is disabled in this project for security; without these grants the
+   PostgREST API returns 403 Forbidden even with RLS public-read policies).
