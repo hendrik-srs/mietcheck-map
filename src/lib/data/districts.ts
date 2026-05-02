@@ -6,6 +6,15 @@ export interface DistrictProperties {
   id: string;
   name: string;
   level: "bezirk" | "ortsteil" | "plz";
+  rent_median: number | null;
+  rent_sample_size: number | null;
+  rent_period_start: string | null;
+  rent_period_end: string | null;
+  rent_metric: string | null;
+  rent_source_id: string | null;
+  rent_source_name: string | null;
+  rent_source_publisher: string | null;
+  rent_source_url: string | null;
 }
 
 export type DistrictsFeatureCollection = FeatureCollection<

@@ -2,7 +2,7 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Layer,
   Map,
@@ -18,14 +18,38 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { DistrictsFeatureCollection } from "@/lib/data/districts";
+import type {
+  DistrictProperties,
+  DistrictsFeatureCollection,
+} from "@/lib/data/districts";
+
+// Sequential YlOrRd-style choropleth: yellow (cheap) -> dark red (expensive).
+// Stops chosen for the 2025 Berlin range (11.56 - 20.00 €/m² Nettokaltmiete).
+const RENT_STOPS: Array<[number, string]> = [
+  [11, "#fff7bc"],
+  [13, "#fee391"],
+  [15, "#fec44f"],
+  [17, "#fb923c"],
+  [19, "#dc2626"],
+  [21, "#7f1d1d"],
+];
 
 const FILL_LAYER: LayerProps = {
   id: "districts-fill",
   type: "fill",
   paint: {
-    "fill-color": "#3b82f6",
-    "fill-opacity": 0.18,
+    "fill-color": [
+      "case",
+      ["==", ["get", "rent_median"], null],
+      "#cbd5e1",
+      [
+        "interpolate",
+        ["linear"],
+        ["to-number", ["get", "rent_median"]],
+        ...RENT_STOPS.flat(),
+      ],
+    ],
+    "fill-opacity": 0.7,
   },
 };
 
@@ -34,7 +58,7 @@ const LINE_LAYER: LayerProps = {
   type: "line",
   paint: {
     "line-color": "#1e3a8a",
-    "line-width": 1.2,
+    "line-width": 1,
   },
 };
 
@@ -54,10 +78,19 @@ const LABEL_LAYER: LayerProps = {
   },
 };
 
-interface SelectedDistrict {
-  id: string;
-  name: string;
-  level: string;
+const EUR = new Intl.NumberFormat("de-DE", {
+  style: "currency",
+  currency: "EUR",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const NUM = new Intl.NumberFormat("de-DE");
+
+function formatPeriod(start: string | null, end: string | null): string | null {
+  if (!start || !end) return null;
+  const yearStart = start.slice(0, 4);
+  const yearEnd = end.slice(0, 4);
+  return yearStart === yearEnd ? `Kalenderjahr ${yearStart}` : `${yearStart}–${yearEnd}`;
 }
 
 export default function BerlinMapInner({
@@ -65,19 +98,26 @@ export default function BerlinMapInner({
 }: {
   districts: DistrictsFeatureCollection;
 }) {
-  const [selected, setSelected] = useState<SelectedDistrict | null>(null);
+  const [selected, setSelected] = useState<DistrictProperties | null>(null);
   const [cursor, setCursor] = useState<"auto" | "pointer">("auto");
 
   const onClick = useCallback((e: MapLayerMouseEvent) => {
     const feature = e.features?.[0];
     if (!feature) return;
-    const props = feature.properties ?? {};
-    setSelected({
-      id: String(props.id ?? feature.id),
-      name: String(props.name ?? "Unbekannter Bezirk"),
-      level: String(props.level ?? "bezirk"),
-    });
+    setSelected(feature.properties as unknown as DistrictProperties);
   }, []);
+
+  const stats = useMemo(() => {
+    const medians = districts.features
+      .map((f) => f.properties.rent_median)
+      .filter((v): v is number => typeof v === "number");
+    if (medians.length === 0) return null;
+    return {
+      min: Math.min(...medians),
+      max: Math.max(...medians),
+      count: medians.length,
+    };
+  }, [districts]);
 
   return (
     <>
@@ -100,6 +140,10 @@ export default function BerlinMapInner({
         </Source>
       </Map>
 
+      {stats && (
+        <Legend min={stats.min} max={stats.max} count={stats.count} />
+      )}
+
       <Sheet
         open={selected !== null}
         onOpenChange={(open) => {
@@ -107,36 +151,128 @@ export default function BerlinMapInner({
         }}
       >
         <SheetContent>
-          {selected && (
-            <>
-              <SheetHeader>
-                <SheetTitle>{selected.name}</SheetTitle>
-                <SheetDescription>Bezirk in Berlin</SheetDescription>
-              </SheetHeader>
-              <div className="space-y-4 px-4 pb-6 text-sm">
-                <div className="rounded-lg border bg-muted/40 p-4 text-muted-foreground">
-                  <p className="font-medium text-foreground">
-                    Mietspiegel-Daten folgen.
-                  </p>
-                  <p className="mt-1">
-                    In der nächsten Iteration laden wir die
-                    Mietspiegel-2024-Daten der Senatsverwaltung pro Bezirk und
-                    färben die Karte als Heatmap ein.
-                  </p>
-                </div>
-                <dl className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-                  <dt>Ebene</dt>
-                  <dd className="col-span-2 text-foreground">{selected.level}</dd>
-                  <dt>Quelle</dt>
-                  <dd className="col-span-2 text-foreground">
-                    Geoportal Berlin
-                  </dd>
-                </dl>
-              </div>
-            </>
-          )}
+          {selected && <DistrictDetails district={selected} />}
         </SheetContent>
       </Sheet>
+    </>
+  );
+}
+
+function Legend({
+  min,
+  max,
+  count,
+}: {
+  min: number;
+  max: number;
+  count: number;
+}) {
+  const gradient = RENT_STOPS.map(
+    ([value, color]) =>
+      `${color} ${Math.round(((value - RENT_STOPS[0][0]) / (RENT_STOPS[RENT_STOPS.length - 1][0] - RENT_STOPS[0][0])) * 100)}%`,
+  ).join(", ");
+  return (
+    <div className="pointer-events-auto absolute right-4 bottom-16 z-10 w-60 rounded-lg border bg-background/90 p-3 text-xs shadow-md backdrop-blur">
+      <div className="mb-1 font-medium text-foreground">
+        Median-Angebotsmiete
+      </div>
+      <div className="mb-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+        € / m² Nettokalt · {count} Bezirke
+      </div>
+      <div
+        className="h-2 w-full rounded-sm"
+        style={{ background: `linear-gradient(to right, ${gradient})` }}
+        aria-hidden
+      />
+      <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
+        <span>{NUM.format(RENT_STOPS[0][0])}</span>
+        <span>{NUM.format(RENT_STOPS[RENT_STOPS.length - 1][0])}</span>
+      </div>
+      <div className="mt-2 text-[11px] text-muted-foreground">
+        Aktuell: {NUM.format(min)}–{NUM.format(max)} €/m²
+      </div>
+    </div>
+  );
+}
+
+function DistrictDetails({ district }: { district: DistrictProperties }) {
+  const period = formatPeriod(district.rent_period_start, district.rent_period_end);
+  const median = typeof district.rent_median === "number" ? district.rent_median : null;
+  const samples = district.rent_sample_size;
+
+  return (
+    <>
+      <SheetHeader>
+        <SheetTitle>{district.name}</SheetTitle>
+        <SheetDescription>Bezirk in Berlin</SheetDescription>
+      </SheetHeader>
+      <div className="space-y-4 px-4 pb-6">
+        {median !== null ? (
+          <div className="rounded-lg border bg-card p-4">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">
+              Median-Angebotsmiete
+            </div>
+            <div className="mt-1 flex items-baseline gap-1">
+              <span className="text-3xl font-semibold tabular-nums">
+                {EUR.format(median)}
+              </span>
+              <span className="text-sm text-muted-foreground">/ m² netto kalt</span>
+            </div>
+            {samples != null && (
+              <div className="mt-2 text-xs text-muted-foreground">
+                Basis: {NUM.format(samples)} Online-Inserate
+                {period ? ` · ${period}` : null}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground">
+              Noch keine Mietpreis-Daten vorhanden.
+            </p>
+            <p className="mt-1">
+              Für diesen Bezirk wurden noch keine Werte aus offiziellen Quellen
+              eingelesen.
+            </p>
+          </div>
+        )}
+
+        {district.rent_source_name && (
+          <dl className="space-y-1 text-xs">
+            <div>
+              <dt className="text-muted-foreground">Quelle</dt>
+              <dd className="text-foreground">
+                {district.rent_source_url ? (
+                  <a
+                    href={district.rent_source_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline-offset-2 hover:underline"
+                  >
+                    {district.rent_source_name}
+                  </a>
+                ) : (
+                  district.rent_source_name
+                )}
+              </dd>
+            </div>
+            {district.rent_source_publisher && (
+              <div>
+                <dt className="text-muted-foreground">Herausgeber</dt>
+                <dd className="text-foreground">
+                  {district.rent_source_publisher}
+                </dd>
+              </div>
+            )}
+          </dl>
+        )}
+
+        <p className="text-[11px] text-muted-foreground">
+          Angebotsmiete = aus Online-Inseraten ermittelte Median-Miete für neu
+          angebotene Wohnungen. Sie liegt typischerweise über der
+          Bestandsmiete (= laufende Mieten in bestehenden Verträgen).
+        </p>
+      </div>
     </>
   );
 }

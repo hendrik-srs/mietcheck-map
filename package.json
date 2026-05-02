@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "ingest:berlin-districts": "tsx --env-file=.env.local scripts/ingest/berlin-districts.ts"
+    "ingest:berlin-districts": "tsx --env-file=.env.local scripts/ingest/berlin-districts.ts",
+    "ingest:berlin-ibb-2025": "tsx --env-file=.env.local scripts/ingest/berlin-ibb-2025.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -35,6 +36,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "exceljs": "^4.4.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
