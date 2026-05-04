@@ -11,6 +11,7 @@ import {
   type MapLayerMouseEvent,
 } from "react-map-gl/maplibre";
 
+import { RentHistoryChart } from "@/components/map/rent-history-chart";
 import {
   Sheet,
   SheetContent,
@@ -21,6 +22,7 @@ import {
 import type {
   DistrictProperties,
   DistrictsFeatureCollection,
+  RentHistoryPoint,
 } from "@/lib/data/districts";
 
 // Sequential YlOrRd-style choropleth: yellow (cheap) -> dark red (expensive).
@@ -93,6 +95,49 @@ function formatPeriod(start: string | null, end: string | null): string | null {
   return yearStart === yearEnd ? `Kalenderjahr ${yearStart}` : `${yearStart}–${yearEnd}`;
 }
 
+// MapLibre flattens nested properties to JSON strings for the vector-tile
+// model. Reconstruct the typed shape on the client.
+function parseDistrictProperties(
+  raw: Record<string, unknown> | null | undefined,
+): DistrictProperties {
+  const props = raw ?? {};
+  let history: RentHistoryPoint[] = [];
+  const rawHistory = props.rent_history;
+  if (typeof rawHistory === "string") {
+    try {
+      history = JSON.parse(rawHistory) as RentHistoryPoint[];
+    } catch {
+      history = [];
+    }
+  } else if (Array.isArray(rawHistory)) {
+    history = rawHistory as RentHistoryPoint[];
+  }
+  return {
+    id: String(props.id ?? ""),
+    name: String(props.name ?? "Unbekannter Bezirk"),
+    level: (props.level as DistrictProperties["level"]) ?? "bezirk",
+    rent_median: typeof props.rent_median === "number" ? props.rent_median : null,
+    rent_sample_size:
+      typeof props.rent_sample_size === "number" ? props.rent_sample_size : null,
+    rent_period_start:
+      typeof props.rent_period_start === "string" ? props.rent_period_start : null,
+    rent_period_end:
+      typeof props.rent_period_end === "string" ? props.rent_period_end : null,
+    rent_metric: typeof props.rent_metric === "string" ? props.rent_metric : null,
+    rent_source_id:
+      typeof props.rent_source_id === "string" ? props.rent_source_id : null,
+    rent_source_name:
+      typeof props.rent_source_name === "string" ? props.rent_source_name : null,
+    rent_source_publisher:
+      typeof props.rent_source_publisher === "string"
+        ? props.rent_source_publisher
+        : null,
+    rent_source_url:
+      typeof props.rent_source_url === "string" ? props.rent_source_url : null,
+    rent_history: history,
+  };
+}
+
 export default function BerlinMapInner({
   districts,
 }: {
@@ -104,7 +149,7 @@ export default function BerlinMapInner({
   const onClick = useCallback((e: MapLayerMouseEvent) => {
     const feature = e.features?.[0];
     if (!feature) return;
-    setSelected(feature.properties as unknown as DistrictProperties);
+    setSelected(parseDistrictProperties(feature.properties));
   }, []);
 
   const stats = useMemo(() => {
@@ -199,6 +244,7 @@ function DistrictDetails({ district }: { district: DistrictProperties }) {
   const period = formatPeriod(district.rent_period_start, district.rent_period_end);
   const median = typeof district.rent_median === "number" ? district.rent_median : null;
   const samples = district.rent_sample_size;
+  const history = district.rent_history;
 
   return (
     <>
@@ -206,7 +252,7 @@ function DistrictDetails({ district }: { district: DistrictProperties }) {
         <SheetTitle>{district.name}</SheetTitle>
         <SheetDescription>Bezirk in Berlin</SheetDescription>
       </SheetHeader>
-      <div className="space-y-4 px-4 pb-6">
+      <div className="space-y-4 overflow-y-auto px-4 pb-6">
         {median !== null ? (
           <div className="rounded-lg border bg-card p-4">
             <div className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -222,6 +268,11 @@ function DistrictDetails({ district }: { district: DistrictProperties }) {
               <div className="mt-2 text-xs text-muted-foreground">
                 Basis: {NUM.format(samples)} Online-Inserate
                 {period ? ` · ${period}` : null}
+              </div>
+            )}
+            {history.length >= 2 && (
+              <div className="mt-4 border-t pt-3">
+                <RentHistoryChart history={history} />
               </div>
             )}
           </div>

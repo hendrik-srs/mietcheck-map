@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "ingest:berlin-districts": "tsx --env-file=.env.local scripts/ingest/berlin-districts.ts",
-    "ingest:berlin-ibb-2025": "tsx --env-file=.env.local scripts/ingest/berlin-ibb-2025.ts"
+    "ingest:berlin-ibb": "tsx --env-file=.env.local scripts/ingest/berlin-ibb.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

@@ -2,6 +2,12 @@ import type { FeatureCollection, MultiPolygon, Polygon } from "geojson";
 
 import { createClient } from "@/lib/supabase/server";
 
+export interface RentHistoryPoint {
+  period_end: string;
+  value_median: number;
+  sample_size: number | null;
+}
+
 export interface DistrictProperties {
   id: string;
   name: string;
@@ -15,6 +21,7 @@ export interface DistrictProperties {
   rent_source_name: string | null;
   rent_source_publisher: string | null;
   rent_source_url: string | null;
+  rent_history: RentHistoryPoint[];
 }
 
 export type DistrictsFeatureCollection = FeatureCollection<
