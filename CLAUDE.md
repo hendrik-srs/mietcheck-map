@@ -13,13 +13,25 @@ Datenpunkt mit Quelle verlinkt.
 Ziel: portfolio-taugliches Projekt für CV/LinkedIn, später potenziell monetarisierbar
 (Premium-Reports, Mietpreisbremse-Beratung-Affiliate, etc.).
 
-## Status
+## Status (Stand: 2026-05-05)
 
-- **Phase 1 ✅ abgeschlossen**: Setup, Schema, Landing-Page, Production-Deploy
-- **Phase 2 🔜 als nächstes**: Berliner Bezirks-Geometrien laden, Mietspiegel-Daten
-   ingestieren, erste interaktive Karte mit Heatmap rendern
-- Phase 3+: Fairness-Check (Mietpreisbremse-Berechnung), Trend-Charts pro Bezirk,
-   später Erweiterung auf München/Hamburg/Köln
+- **Phase 1 ✅** Setup, Schema, Landing-Page, Production-Deploy
+- **Phase 2.1 ✅** Berliner Bezirks-Geometrien (Geoportal Berlin) in DB
+- **Phase 2.2 ✅** Mietpreis-Daten — IBB Wohnungsmarktbericht 2025 ingestiert
+- **Phase 3.1–3.4 ✅** Interaktive Karte `/karte` mit MapLibre, Heatmap-Layer,
+   Klick-Sheet mit Detail-Panel
+- **Phase 5.1 ✅** Historische Daten 2012–2024 ingestiert (IBB)
+- **Phase 5.2 ✅** Trend-Linie im Detail-Sheet (Recharts)
+- **Keep-Alive ✅** GitHub-Actions-Cron pingt täglich + commitet alle 30 Tage
+   einen Heartbeat → Supabase + GitHub bleiben automatisch wach (siehe
+   `.github/workflows/keep-alive.yml`)
+
+**Was als nächstes ansteht** (in Prioritätsreihenfolge):
+1. **Phase 4 — Fairness-Check** (Highlight-Feature, größter Portfolio-Wert)
+2. **Phase 5.3 + 5.4** — SEO-Bezirks-Seiten + öffentliche Quellen-Seite
+3. **Phase 2.1b** — Berliner Ortsteile (~100 Polygone, Voraussetzung für 4.2 Geocoding)
+4. **Phase 6** — München/Hamburg/Köln
+5. **Phase 3.5** — Stadt-Wechsel-UI (sobald Phase 6 läuft)
 
 Live: https://mietcheck-map.vercel.app
 Repo: https://github.com/Hendrik-srs/mietcheck-map
@@ -33,25 +45,57 @@ Repo: https://github.com/Hendrik-srs/mietcheck-map
 - **MapLibre GL JS** (über react-map-gl@8): Open Source, keine Mapbox-Token-Kosten
 - **Recharts**: Trend-Charts
 - **Vercel**: Free-Tier-Hosting, Auto-Deploy bei jedem Push, Preview-URLs für Branches
-- **GitHub Actions** (geplant Phase 2+): Cron-Jobs für Daten-Ingestion
+- **GitHub Actions**: Cron-Jobs für Daten-Ingestion (geplant) + Keep-Alive (läuft)
+- **OpenFreeMap**: kostenlose Karten-Tiles ohne API-Key oder Account
+- **exceljs** (statt xlsx): aktiv gepflegt, keine kritischen CVEs
 
 ## Architektur
 
 ```
 src/
-├── app/                    # Next.js App Router
-├── components/ui/          # shadcn/ui (Card, Button, Input, Label, Badge)
+├── app/
+│   ├── page.tsx            # Landing-Page
+│   ├── karte/page.tsx      # Server Component: lädt districts via rpc
+│   ├── robots.ts, sitemap.ts
+├── components/
+│   ├── ui/                 # shadcn (Badge, Button, Card, Input, Label, Sheet)
+│   └── map/
+│       ├── berlin-map.tsx        # Client wrapper, dynamic-loads inner
+│       ├── berlin-map-inner.tsx  # MapLibre map + Sheet + Legend
+│       └── rent-history-chart.tsx # Recharts LineChart (2012-2025)
 └── lib/
+    ├── data/districts.ts   # getDistrictsGeoJSON(cityId) via supabase rpc
     └── supabase/
         ├── client.ts       # Browser (RLS via publishable key)
         ├── server.ts       # SSR mit Cookies (RLS via publishable key)
         └── admin.ts        # Server-only mit secret key, BYPASSED RLS
                             # nur für Ingestion-Jobs / Admin-Endpunkte
+
+scripts/
+└── ingest/
+    ├── berlin-districts.ts # Geoportal Berlin → districts.geometry
+    └── berlin-ibb.ts       # IBB Wohnungsmarktbericht → rent_data_points
+
 supabase/
 └── migrations/             # SQL-Migrations chronologisch
                             # manuell via Supabase SQL Editor anwenden
                             # (Supabase CLI noch nicht eingerichtet)
+                            # 0001 schema, 0002 grants, 0003 ingestion helpers,
+                            # 0004 get_districts_geojson v1, 0005 rent helpers
+                            # + v2, 0006 v3 mit rent_history
+
+.github/workflows/
+└── keep-alive.yml          # täglich Supabase pingen + alle 30 Tage
+                            # heartbeat-commit (siehe .github/heartbeat.txt)
 ```
+
+**RPC-Funktionen in Supabase** (definiert in Migrations 0003, 0005, 0006):
+- `upsert_city(...)` — idempotent City-Insert mit GeoJSON bbox
+- `upsert_district(...)` — idempotent District-Insert (Polygon→MultiPolygon Promotion)
+- `upsert_rent_data_point(...)` — idempotent rent observation, keyed auf
+   (source, district, period, metric, property_type)
+- `get_districts_geojson(city_id)` — FeatureCollection mit aktuellem Median
+   pro Bezirk + komplettem `rent_history` Array
 
 ## Datenbank-Schema (Phase 1)
 
@@ -66,11 +110,13 @@ Alle Tabellen: RLS aktiviert, public-read-Policy. Writes nur via admin-Client.
 
 ## Wichtige Konventionen / Gotchas
 
-1. **Schema-Migrations**: chronologisch in `supabase/migrations/`. Manuell im
-   Supabase SQL Editor anwenden. (Wenn wir die Supabase CLI später einrichten,
-   gibt's `supabase db push`.)
+1. **Schema-Migrations**: chronologisch in `supabase/migrations/`. **Manuell im
+   Supabase SQL Editor anwenden** — nach jedem `Write` einer Migration auf User-
+   Bestätigung warten ("Success. No rows returned"). Supabase CLI ist noch nicht
+   eingerichtet.
 2. **Env-Variablen**: `NEXT_PUBLIC_*` darf öffentlich sein, `SUPABASE_SECRET_KEY`
-   ist server-only und in Vercel separat gesetzt. Nie ins Repo.
+   ist server-only und in Vercel separat gesetzt. Nie ins Repo. Im Worktree wird
+   `.env.local` aus dem main-Repo via Symlink eingebunden.
 3. **Daten-Quellen-Regel**: Nichts scrapen. Wenn Daten nur durch Scraping
    verfügbar sind, eine andere Quelle suchen oder diesen Datenpunkt weglassen.
    Im UI immer Quelle + Lizenz verlinken.
@@ -81,17 +127,41 @@ Alle Tabellen: RLS aktiviert, public-read-Policy. Writes nur via admin-Client.
    Flex-Parent → manche Browser kollabieren das auf min-content. **Pattern:**
    max-width auf Wrapper-Div, grid auf innerem Element. Siehe Features-Section
    in `src/app/page.tsx` als Referenz.
+6. **MapLibre flacht Properties ab**: Click-Events liefern `feature.properties`
+   mit allen verschachtelten Objekten als JSON-Strings. `rent_history` muss auf
+   dem Client mit `JSON.parse()` rekonstruiert werden — siehe
+   `parseDistrictProperties()` in `berlin-map-inner.tsx`.
+7. **Next.js 16 Caching**: `unstable_cache` ist tot, ersetzt durch `'use cache'`-
+   Direktive + `cacheLife`/`cacheTag`. Wir haben das noch nicht aktiviert
+   (`cacheComponents: true` in `next.config.ts`). Wenn aktiviert: alle Pages
+   sind dynamic by default, `force-dynamic` ist no-op.
+8. **`next/dynamic` mit `ssr: false`**: muss aus einer Client-Component kommen,
+   nicht aus einem Server-Component. Pattern: `berlin-map.tsx` (use client) →
+   dynamic import → `berlin-map-inner.tsx` (use client + maplibre).
+9. **scripts/ vom Build-Typecheck ausgeschlossen**: in `tsconfig.json` exclude,
+   weil exceljs `Buffer`-Typen mit @types/node 24 kollidieren. tsx checkt
+   Scripts trotzdem zur Laufzeit.
+10. **shadcn = base-ui-Variante** (nicht Radix). API ähnlich aber nicht identisch.
+   Sheet wird über `<Sheet open={...} onOpenChange={...}>` controlled.
+11. **Ingestion-Scripts sind idempotent**: Re-runs überschreiben in place.
+    Sicher, beliebig oft auszuführen.
 
 ## Befehle
 
 ```bash
-npm run dev      # Dev-Server mit Turbopack, http://localhost:3000
-npm run build    # Production-Build (lokal verifizieren vor Push)
-npm run lint     # ESLint
-npm run start    # Production-Server (lokal nach build)
+npm run dev                       # Dev-Server mit Turbopack, http://localhost:3000
+npm run build                     # Production-Build (lokal verifizieren vor Push)
+npm run lint                      # ESLint
+npm run start                     # Production-Server (lokal nach build)
+
+# Ingestion (idempotent, brauchen .env.local mit SUPABASE_SECRET_KEY)
+npm run ingest:berlin-districts   # Geoportal Berlin → 12 Bezirke
+npm run ingest:berlin-ibb         # IBB Wohnungsmarktbericht → 168 rent points
 ```
 
 Deployment passiert automatisch bei jedem `git push origin main`.
+Push-Workflow: User arbeitet auf einem Worktree-Branch, Push geht via
+`git push origin HEAD:main` direkt nach main. Kein PR-Step.
 
 ## Style-Vorgaben
 
@@ -125,81 +195,55 @@ sehen, an welchem Phase-Schritt wir gerade stehen. Pro Schritt: ein Commit
 
 ### Phase 2 — Datenpipeline & erste Daten in der DB
 
-**Ziel**: Berliner Bezirks-Geometrien + erste echte Mietspiegel-Daten in
-der DB. Ingestion automatisierbar gemacht.
+**Schritt 2.1 ✅ DONE** — Berliner Bezirks-Geometrien
+- Quelle: Geoportal Berlin via TSB (CC-BY-equivalent, Attribution-Pflicht)
+- Script: `npm run ingest:berlin-districts`
+- 12 Bezirke als MULTIPOLYGON in `districts` (Commit `5e76978`)
 
-**Schritt 2.1 — Berliner Bezirks-Geometrien laden**
-- Datenquelle: Berlin Open Data (https://daten.berlin.de) oder
-   GeoBasis-DE — z.B. "Bezirke Berlin" als GeoJSON
-- Script `scripts/ingest/berlin-districts.ts`: lädt GeoJSON, parst,
-   inserted in `districts` mit `level='bezirk'`, `city_id='berlin'`
-- Vorher in `cities` Berlin-Eintrag erstellen (centroid + bbox)
-- Ausführung mit `tsx scripts/ingest/berlin-districts.ts`
-- Akzeptanz: 12 Berlin-Bezirke in DB, geometry-Spalte gefüllt
-- Gleiches für Ortsteile (~100) als Fein-Granularität
+**Schritt 2.1b — Berliner Ortsteile (NICHT GEMACHT)**
+- ~100 feinere Polygone, gleiche Pipeline, andere GeoJSON-URL
+- Erst nötig für Phase 4.2 (Adress-Geocoding zu Bezirk via ST_Contains)
 
-**Schritt 2.2 — Mietspiegel-2024-Daten ingestieren (JSON-Seed)**
-- Berliner Mietspiegel 2024 manuell aus PDF in JSON umwandeln
-   (Tabelle: Wohnlage × Baualter × qm-Klasse → €/qm Median+Spanne)
-- Script `scripts/ingest/berlin-mietspiegel-2024.ts`
-- `data_sources`-Eintrag mit korrekter URL, License, reference_date
-- `rent_data_points`-Einträge pro Bezirk (Aggregation über Wohnlagen)
-- Akzeptanz: ein Median-€/qm-Wert pro Berliner Bezirk in DB
-- Notiz für später: PDF-Parser mit `pdf-parse` oder Claude-API für
-   automatische Extraktion bei Update 2026
+**Schritt 2.2 ✅ DONE** — Angebotsmieten
+- **Quelle gewechselt**: nicht Mietspiegel 2024 (Wohnlage×Baualter×qm-Tabelle,
+   schwierig pro-Bezirk zu aggregieren), sondern **IBB Wohnungsmarktbericht 2025**
+   (CC-BY-4.0, XLSX direkt downloadbar mit ein Median pro Bezirk pro Jahr)
+- Script: `npm run ingest:berlin-ibb`  (parsed alle Jahre 2012–2025)
+- `data_sources.id = 'ibb_wohnungsmarktbericht_2025'`
+- `rent_data_points`: 168 Zeilen, metric `angebotsmiete_median_eur_per_sqm`
+- Range 2025: 11,56 €/m² (Marzahn-Hellersdorf) – 20,00 €/m² (Mitte)
+- Mietspiegel 2024 als alternative Quelle für Bestandsmieten **noch offen** —
+   wäre interessant für direkte Mietpreisbremsen-Logik in Phase 4
 
-**Schritt 2.3 — Destatis-Trend-Daten (optional in Phase 2)**
+**Schritt 2.3 — Destatis-Trend-Daten (NICHT GEMACHT, optional)**
 - Destatis GENESIS-API: Verbraucherpreisindex Wohnen, monatlich
-- Script `scripts/ingest/destatis-rental-index.ts`
-- In `data_sources` + `rent_data_points` mit metric=
-   'angebotsmiete_median_eur_per_sqm' (oder besser: Index als
-   eigene neue Tabelle `rental_indices` falls relevant)
+- Aktuell brauchen wir's nicht weil IBB-Historie 2012–2025 alles liefert
 
-**Schritt 2.4 — Ingestion automatisierbar machen**
-- GitHub Actions Workflow `.github/workflows/ingest-data.yml`
-- Cron: wöchentlich, prüft auf neue Quellen
-- Secrets in GitHub: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`
-- Akzeptanz: Workflow-Run zeigt "no new data" oder ingestiert neue Werte
+**Schritt 2.4 — Auto-Ingestion (NICHT GEMACHT)**
+- GitHub Actions Workflow für automatische Re-Ingestion
+- Aktuell: manuell `npm run ingest:berlin-ibb` einmal pro Jahr nach IBB-Update
+- Existierender Workflow `keep-alive.yml` ist NUR für Aktivität, nicht Ingestion
 
 ---
 
 ### Phase 3 — Interaktive Karte
 
-**Ziel**: User sieht Berlin als Heatmap mit Mietpreisen pro Bezirk,
-kann auf Bezirke klicken und Details sehen.
+**Schritt 3.1 ✅** Karten-Komponente — `/karte` mit MapLibre via react-map-gl@8,
+Style: OpenFreeMap Positron (gratis, kein Key)
 
-**Schritt 3.1 — Karten-Komponente**
-- Neue Route `src/app/karte/page.tsx`
-- Client Component mit MapLibre GL via react-map-gl
-- Default-Style: kostenlos OSM-basiert (z.B. MapTiler free tier mit
-   API-Key, oder rein OSM-Raster ohne Key) — Recherchieren was
-   am unkompliziertesten ist
-- Initial-Viewport zentriert auf Berlin (52.52°N, 13.405°E, zoom 10)
+**Schritt 3.2 ✅** Geometrien + Mieten aus DB — Server Component holt
+GeoJSON via rpc `get_districts_geojson('berlin')`. Caching via Next.js
+'use cache' bewusst noch NICHT aktiviert.
 
-**Schritt 3.2 — Geometrien aus DB laden**
-- Server Action `getDistrictsWithRents(cityId)`:
-   gibt GeoJSON-FeatureCollection zurück mit Bezirks-Polygonen +
-   aktuellem Median-€/qm in `properties`
-- PostGIS-Abfrage: `ST_AsGeoJSON(geometry)` joined mit aktuellsten
-   `rent_data_points`
-- Caching-Strategie: Next.js `unstable_cache` mit Tag-basierter
-   Revalidierung wenn neue Daten ingestiert werden
+**Schritt 3.3 ✅** Heatmap-Layer — Choropleth (Yellow→Red), Legende mit
+Live-Range bottom-right
 
-**Schritt 3.3 — Heatmap-Layer**
-- MapLibre fill-Layer mit Choropleth:
-   Farb-Stops auf Median-€/qm (z.B. 8-15 €/qm linear interpoliert)
-- Legende rechts unten: Farb-Skala mit €/qm-Werten
-- Hover-State: Outline + Tooltip mit Bezirksname + Wert
+**Schritt 3.4 ✅** Detail-Panel — shadcn Sheet, zeigt Median + Sample Size
++ Trend-Chart + Quelle. Mobile-responsive (Sheet macht das automatisch).
+**Noch offen aus Roadmap**: p25/p75-Spanne (IBB liefert keine), Mobile-Bottom-Sheet
+(aktuell rechts-gleitend auch auf Mobile)
 
-**Schritt 3.4 — Detail-Panel**
-- Klick auf Bezirk öffnet Side-Panel (shadcn Sheet-Komponente)
-- Zeigt: Bezirksname, Median-Miete, Spanne (p25-p75), letzte Aktualisierung,
-   Quelle mit Link
-- Mobile: vollflächiges Bottom-Sheet
-
-**Schritt 3.5 — Stadt-Wechsel UI vorbereiten (auch wenn nur Berlin)**
-- Header-Dropdown "Stadt wählen" — bereit für München/Hamburg
-- Aktuell: nur "Berlin", andere disabled mit "bald"-Badge
+**Schritt 3.5 — Stadt-Wechsel UI (NICHT GEMACHT)** — kommt mit Phase 6
 
 ---
 
@@ -250,31 +294,21 @@ Bewertung. Hauptdifferenzierer gegenüber Konkurrenz.
 
 ### Phase 5 — Trend-Charts & Polish
 
-**Ziel**: Historische Entwicklung pro Bezirk sichtbar machen, Detail-
-Tiefe erhöhen.
+**Schritt 5.1 ✅** Historie 2012–2025 ingestiert via IBB
+(168 rent_data_points)
 
-**Schritt 5.1 — Historische Daten ingestieren**
-- Mietspiegel 2018, 2020, 2022, 2024 — Berlin
-- Quartalsdaten Amt für Statistik Berlin-Brandenburg seit 2018
-- Skript `scripts/ingest/berlin-historical.ts`
+**Schritt 5.2 ✅** Trend-Chart in Sheet — Recharts LineChart + %-Indikator
+relativ zu 2012. **Noch offen aus Roadmap**: separate Routen
+`/trends/[bezirk]` und `/trends/vergleich` für Multi-Bezirk-Vergleich
 
-**Schritt 5.2 — Trend-Chart-Komponente**
-- Recharts Line-Chart mit time-series pro Bezirk
-- Quellen-Tooltips: jeder Datenpunkt zeigt seine Source
-- Multi-Bezirk-Vergleich (bis zu 3 Bezirke gleichzeitig)
-- Route `/trends/[bezirk]` und `/trends/vergleich`
+**Schritt 5.3 — SEO-Bezirks-Seiten (NICHT GEMACHT)**
+- Pro Bezirk eigene SEO-Seite `/bezirk/[name]`
+- Strukturierte Daten (schema.org Place), OG-Image
+- robots.txt + sitemap.xml schon da, aber müssten Bezirks-Seiten enthalten
 
-**Schritt 5.3 — SEO + Sharing**
-- Pro Bezirk eigene SEO-Seite `/bezirk/[name]` mit:
-   - aktueller Miete, Trend, Top-Quellen
-   - Strukturierte Daten (schema.org Place)
-   - OG-Image generiert
-- Sitemap.xml automatisch
-- robots.txt korrekt
-
-**Schritt 5.4 — Quellen-Transparenz-Seite**
-- Route `/quellen`: alle data_sources tabellarisch mit Lizenz-Info,
-   reference_date, fetch_date, Link
+**Schritt 5.4 — Quellen-Transparenz-Seite (NICHT GEMACHT)**
+- Route `/quellen`: alle `data_sources` tabellarisch mit Lizenz, Datum, Link
+- Aktuell ist die Quellenangabe nur im Detail-Sheet pro Bezirk sichtbar
 
 ---
 
@@ -307,9 +341,13 @@ Anwalts-Konsultation für Mietpreisbremsen-Berechnung empfehlenswert
 ## Was beim Session-Start zu tun ist
 
 1. `git status` + `git log -10` zur Orientierung
-2. In dieser Roadmap nachschauen, an welchem Schritt wir sind (letzter
-   Commit-Message gibt meist Hinweis: "feat(phase-2.1): ...")
-3. User fragen, ob diese Phase weitergeht oder Sprung an andere Stelle
+2. **Status-Sektion oben in dieser Datei** zeigt was live ist und was als
+   nächstes ansteht. Letzter Commit-Message gibt zusätzlichen Hinweis.
+3. User fragen, ob die Top-Priorität aus der Status-Liste angegangen wird
+   oder Sprung an andere Stelle
 4. Konkreten Schritt aus Roadmap nehmen, eigene TodoWrite-Liste daraus
    bauen, abarbeiten
-5. Pro Schritt: Commit-Message Format `feat(phase-X.Y): kurze Zusammenfassung`
+5. Pro Schritt: Commit-Message Format `feat(phase-X.Y): kurze Zusammenfassung`,
+   dann `git push origin HEAD:main` (kein PR-Step)
+6. Vor jedem `Write` einer Migration auf User-Bestätigung warten ("Success.
+   No rows returned"), dann erst weitermachen
