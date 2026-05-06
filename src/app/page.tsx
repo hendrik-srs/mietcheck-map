@@ -46,12 +46,18 @@ export default function Home() {
             <Map className="size-5 text-primary" />
             MietCheck Map
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Link
               href="/karte"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Karte
+            </Link>
+            <Link
+              href="/check"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Fairness-Check
             </Link>
             <Badge variant="secondary" className="text-xs">
               in Entwicklung · v0.1
@@ -75,21 +81,19 @@ export default function Home() {
         </p>
         <div className="mt-10 flex flex-col sm:flex-row gap-3 sm:justify-start justify-center">
           <Link
-            href="/karte"
+            href="/check"
             className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <Scale className="size-4" />
+            Miete prüfen
+          </Link>
+          <Link
+            href="/karte"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border px-6 text-sm font-medium hover:bg-accent transition-colors"
           >
             <Map className="size-4" />
             Karte ansehen
           </Link>
-          <a
-            href="https://github.com/Hendrik-srs/mietcheck-map"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border px-6 text-sm font-medium hover:bg-accent transition-colors"
-          >
-            <Code2 className="size-4" />
-            Source auf GitHub
-          </a>
         </div>
       </section>
 
@@ -146,9 +150,11 @@ export default function Home() {
         <ol className="space-y-3 text-sm">
           {[
             { state: "live", text: "Interaktive Karte der 12 Berliner Bezirke" },
-            { state: "in Arbeit", text: "Mietspiegel-2024-Daten als Heatmap auf der Karte" },
-            { state: "geplant", text: "Fairness-Check mit Mietpreisbremsen-Berechnung" },
-            { state: "geplant", text: "Trend-Charts pro Bezirk seit 2018" },
+            { state: "live", text: "Mietpreis-Heatmap aus IBB Wohnungsmarktbericht 2025" },
+            { state: "live", text: "Trend-Charts pro Bezirk seit 2012" },
+            { state: "live", text: "Fairness-Check: Adresse + Miete vergleichen" },
+            { state: "in Arbeit", text: "Mietspiegel-Werte für rechtssichere Mietpreisbremsen-Prüfung" },
+            { state: "geplant", text: "SEO-Bezirks-Seiten + Quellen-Transparenz" },
             { state: "später", text: "Erweiterung auf München, Hamburg, Köln" },
           ].map((item) => (
             <li key={item.text} className="flex gap-3 items-baseline">

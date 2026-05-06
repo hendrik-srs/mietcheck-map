@@ -22,16 +22,21 @@ Ziel: portfolio-taugliches Projekt für CV/LinkedIn, später potenziell monetari
    Klick-Sheet mit Detail-Panel
 - **Phase 5.1 ✅** Historische Daten 2012–2024 ingestiert (IBB)
 - **Phase 5.2 ✅** Trend-Linie im Detail-Sheet (Recharts)
+- **Phase 4.1–4.4 ✅ (MVP)** Fairness-Check `/check`: Form, Nominatim-Geocoding,
+   PostGIS-Bezirk-Lookup, Vergleich mit IBB-Median, Verdict + Quellen-Link
 - **Keep-Alive ✅** GitHub-Actions-Cron pingt täglich + commitet alle 30 Tage
    einen Heartbeat → Supabase + GitHub bleiben automatisch wach (siehe
    `.github/workflows/keep-alive.yml`)
 
 **Was als nächstes ansteht** (in Prioritätsreihenfolge):
-1. **Phase 4 — Fairness-Check** (Highlight-Feature, größter Portfolio-Wert)
-2. **Phase 5.3 + 5.4** — SEO-Bezirks-Seiten + öffentliche Quellen-Seite
-3. **Phase 2.1b** — Berliner Ortsteile (~100 Polygone, Voraussetzung für 4.2 Geocoding)
-4. **Phase 6** — München/Hamburg/Köln
-5. **Phase 3.5** — Stadt-Wechsel-UI (sobald Phase 6 läuft)
+1. **Phase 4.5** — Anonyme Crowdsourced-Mieten in DB speichern (neue Tabelle
+   + Moderations-Flow). Verdict erweitern um Mietspiegel-Werte sobald 2.2b läuft.
+2. **Phase 2.2b — Mietspiegel 2024 ingestieren** für rechtssichere
+   Mietpreisbremsen-Logik (aktuell Vergleich nur gegen IBB-Angebotsmieten-Median)
+3. **Phase 5.3 + 5.4** — SEO-Bezirks-Seiten + öffentliche Quellen-Seite
+4. **Phase 2.1b** — Berliner Ortsteile (~100 Polygone, feinerer Bezirks-Lookup)
+5. **Phase 6** — München/Hamburg/Köln
+6. **Phase 3.5** — Stadt-Wechsel-UI (sobald Phase 6 läuft)
 
 Live: https://mietcheck-map.vercel.app
 Repo: https://github.com/Hendrik-srs/mietcheck-map
@@ -56,6 +61,10 @@ src/
 ├── app/
 │   ├── page.tsx            # Landing-Page
 │   ├── karte/page.tsx      # Server Component: lädt districts via rpc
+│   ├── check/              # Fairness-Check
+│   │   ├── page.tsx        #   Server Component, rendert <CheckForm>
+│   │   ├── check-form.tsx  #   Client: useActionState + Verdict-Panel
+│   │   └── actions.ts      #   "use server": Zod + Geocoding + Lookup
 │   ├── robots.ts, sitemap.ts
 ├── components/
 │   ├── ui/                 # shadcn (Badge, Button, Card, Input, Label, Sheet)
@@ -64,7 +73,9 @@ src/
 │       ├── berlin-map-inner.tsx  # MapLibre map + Sheet + Legend
 │       └── rent-history-chart.tsx # Recharts LineChart (2012-2025)
 └── lib/
+    ├── geocoding.ts        # Nominatim (OSM) Wrapper, free, kein API-Key
     ├── data/districts.ts   # getDistrictsGeoJSON(cityId) via supabase rpc
+    ├── data/fairness.ts    # findDistrictByPoint + assessFairness (Verdict)
     └── supabase/
         ├── client.ts       # Browser (RLS via publishable key)
         ├── server.ts       # SSR mit Cookies (RLS via publishable key)
@@ -82,7 +93,8 @@ supabase/
                             # (Supabase CLI noch nicht eingerichtet)
                             # 0001 schema, 0002 grants, 0003 ingestion helpers,
                             # 0004 get_districts_geojson v1, 0005 rent helpers
-                            # + v2, 0006 v3 mit rent_history
+                            # + v2, 0006 v3 mit rent_history,
+                            # 0007 find_district_by_point (Phase 4 Lookup)
 
 .github/workflows/
 └── keep-alive.yml          # täglich Supabase pingen + alle 30 Tage
@@ -96,6 +108,9 @@ supabase/
    (source, district, period, metric, property_type)
 - `get_districts_geojson(city_id)` — FeatureCollection mit aktuellem Median
    pro Bezirk + komplettem `rent_history` Array
+- `find_district_by_point(city_id, lon, lat)` — gibt den Bezirk zurück, der den
+   Punkt enthält, plus aktuelle Angebotsmiete + Quellen-Metadaten. Verwendet
+   ST_Covers (geography). Empty result wenn Punkt außerhalb der Stadt.
 
 ## Datenbank-Schema (Phase 1)
 
