@@ -20,13 +20,14 @@ wie ImmoScout24 oder immowelt. Das ist:
 **MietCheck Map** macht das anders: Wir nutzen ausschließlich frei zugängliche,
 offizielle Quellen und legen jeden Datenpunkt transparent offen.
 
-## Features (geplant für V1)
+## Features
 
-- 🗺️ **Interaktive Karte** mit Heatmap der durchschnittlichen Kaltmiete pro Bezirk
-- ⚖️ **Fairness-Check** — eigene Miete eingeben, sofort sehen, wo sie im Vergleich
-   zum gesetzlichen Mietspiegel steht (inkl. Mietpreisbremse-Hinweis)
-- 📈 **Trend-Charts** pro Bezirk seit 2018, automatisch aktualisiert
-- 🔍 **Quellen-Transparenz** — jeder Wert ist mit seiner Quelle verlinkt
+- 🗺️ **Interaktive Karte** (`/karte`) mit Heatmap der durchschnittlichen Kaltmiete
+   pro Berliner Bezirk und Klick-Sheet mit Detail-Panel — *live*
+- ⚖️ **Fairness-Check** (`/check`) — Adresse + qm + Miete eingeben, sofort sehen,
+   wie die Miete gegenüber dem Bezirks-Median steht — *live (MVP)*
+- 📈 **Trend-Charts** pro Bezirk seit 2012 (Recharts) im Detail-Sheet — *live*
+- 🔍 **Quellen-Transparenz** — jeder Wert mit seiner Quelle verlinkt
 
 ## Datenquellen (alle frei zugänglich)
 
@@ -99,12 +100,18 @@ npm run start
 
 ## Roadmap
 
-- [x] **Phase 1**: Projekt-Setup, Schema, Landing-Page
-- [ ] **Phase 2**: Datenpipeline (Mietspiegel-Parser, Open-Data-Ingestion)
-- [ ] **Phase 3**: Interaktive Karte mit Bezirks-Heatmap
-- [ ] **Phase 4**: Fairness-Check + Mietpreisbremse-Berechnung
-- [ ] **Phase 5**: Trend-Charts + Crowdsourcing-Layer
+- [x] **Phase 1**: Projekt-Setup, Schema, Landing-Page, Production-Deploy
+- [x] **Phase 2.1 + 2.2**: 12 Berliner Bezirks-Geometrien + IBB Wohnungsmarktbericht 2025 (168 rent_data_points, 2012–2025)
+- [x] **Phase 3**: Interaktive Karte `/karte` mit Bezirks-Heatmap und Detail-Sheet
+- [x] **Phase 4 (MVP)**: Fairness-Check `/check` mit Adress-Geocoding und Bezirks-Lookup
+- [x] **Phase 5.1 + 5.2**: Historie 2012–2025 + Trend-Chart pro Bezirk im Detail-Sheet
+- [ ] **Phase 4.5**: anonymisierter Crowdsourcing-Layer
+- [ ] **Phase 2.2b**: Mietspiegel 2024 für rechtssichere Mietpreisbremse-Berechnung
+- [ ] **Phase 5.3 + 5.4**: SEO-Bezirks-Seiten + öffentliche Quellen-Seite
 - [ ] **Phase 6**: Erweiterung auf München, Hamburg, Köln
+
+> Detaillierter Stand und Architektur-Doku: [`CLAUDE.md`](CLAUDE.md),
+> [`docs/ROADMAP.md`](docs/ROADMAP.md), [`docs/BUILD_EXPLANATION.md`](docs/BUILD_EXPLANATION.md).
 
 ## Lizenz
 
