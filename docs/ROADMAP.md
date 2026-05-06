@@ -55,15 +55,22 @@ Ziel, geplante Umsetzung, ggf. Abhängigkeiten.
 
 ## Phase 4 — Fairness-Check (Restpunkte)
 
-### Schritt 4.5 — Anonymisiert in der Datenbank speichern
-- Neue Tabelle `crowdsourced_rents` (eigene Migration)
-- Felder: `district_id`, `sqm`, `monthly_rent`, `building_age_bracket`,
-  `submitted_at` — KEINE Adresse, keine Email, keine User-ID
-- Opt-in-Checkbox im Form mit DSGVO-Hinweis
-- Moderations-Flow: neue Datenpunkte erscheinen erst nach Review in der Karte
-  (z. B. eigene `status`-Spalte: `pending` / `approved` / `rejected`)
+### Schritt 4.5 — Anonymisiert in der Datenbank speichern *(MVP live ✅)*
+- ✅ Tabelle `crowdsourced_rents` (Migration 0008): `district_id`, `size_sqm`,
+  `monthly_rent_eur`, `building_age_bracket`, `status`, `submitted_at` —
+  KEINE Adresse, keine E-Mail, keine User-ID, keine IP
+- ✅ Opt-in-Checkbox im Form mit DSGVO-Hinweis + Baualter-Select (optional)
+- ✅ Moderations-Flow: Submissions starten als `pending`, sind nicht public
+  lesbar; Review im Supabase-Studio durch Status-Flip auf `approved`
+- ✅ RLS: public-read nur für `status='approved'`; Inserts ausschließlich
+  über Service-Role-RPC `submit_crowdsourced_rent`
+
+**Offene Folgeschritte (nach Volumen):**
 - Verdict-Logik um Mietspiegel-Werte erweitern, sobald 2.2b läuft
+- Approved-Submissions in Karte/Verdict einfließen lassen (z.B. Median-Tooltip
+  ergänzen sobald n ≥ x pro Bezirk erreicht ist)
 - Optional: Ergebnis-PDF-Export, Share-fähiges OG-Image (`next/og`)
+- Optional später: Admin-UI für Moderation statt Supabase-Studio
 
 ---
 
@@ -124,9 +131,9 @@ In Reihenfolge der Realisierbarkeit:
 
 (Quelle: [`../CLAUDE.md`](../CLAUDE.md) Status-Sektion)
 
-1. **Phase 4.5** — anonymisierte Crowdsourced-Mieten
-2. **Phase 2.2b** — Mietspiegel 2024 ingestieren (für rechtssichere Logik)
-3. **Phase 5.3 + 5.4** — SEO-Bezirks-Seiten + Quellen-Seite
-4. **Phase 2.1b** — Berliner Ortsteile (feinerer Lookup)
-5. **Phase 6** — München/Hamburg/Köln
-6. **Phase 3.5** — Stadt-Wechsel-UI (mit Phase 6)
+1. **Phase 2.2b** — Mietspiegel 2024 ingestieren (für rechtssichere Logik)
+2. **Phase 5.3 + 5.4** — SEO-Bezirks-Seiten + Quellen-Seite
+3. **Phase 2.1b** — Berliner Ortsteile (feinerer Lookup)
+4. **Phase 6** — München/Hamburg/Köln
+5. **Phase 3.5** — Stadt-Wechsel-UI (mit Phase 6)
+6. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict, sobald Volumen da

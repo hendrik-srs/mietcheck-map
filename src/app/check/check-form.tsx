@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Info,
   ExternalLink,
+  Heart,
   RotateCcw,
 } from "lucide-react";
 
@@ -19,8 +20,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { runFairnessCheck, type CheckFormState } from "./actions";
 import type { Verdict } from "@/lib/data/fairness";
+import { buildingAgeLabels, type BuildingAgeBracket } from "@/lib/data/crowdsourced";
 
 const initialState: CheckFormState = { status: "idle" };
+
+const buildingAgeOrder: BuildingAgeBracket[] = [
+  "vor_1949",
+  "1949_1990",
+  "1991_2010",
+  "nach_2010",
+];
 
 const eur = (value: number) =>
   new Intl.NumberFormat("de-DE", {
@@ -78,7 +87,14 @@ export function CheckForm() {
     return <ResultPanel state={state} />;
   }
 
-  const v = state.values ?? { address: "", sizeSqm: "", monthlyRent: "" };
+  const v =
+    state.values ?? {
+      address: "",
+      sizeSqm: "",
+      monthlyRent: "",
+      buildingAge: "",
+      share: false,
+    };
   const e = state.errors ?? {};
 
   return (
@@ -147,6 +163,51 @@ export function CheckForm() {
             </div>
           </div>
 
+          <div className="grid gap-2">
+            <Label htmlFor="buildingAge">
+              Baualter <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <select
+              id="buildingAge"
+              name="buildingAge"
+              defaultValue={v.buildingAge}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">Unbekannt / keine Angabe</option>
+              {buildingAgeOrder.map((key) => (
+                <option key={key} value={key}>
+                  {buildingAgeLabels[key]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+            <label
+              htmlFor="share"
+              className="flex cursor-pointer items-start gap-3 text-sm"
+            >
+              <input
+                type="checkbox"
+                id="share"
+                name="share"
+                defaultChecked={v.share}
+                className="mt-0.5 size-4 shrink-0 rounded border-input accent-primary"
+              />
+              <span>
+                <span className="font-medium">
+                  Anonym zur Karte beitragen
+                </span>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  Wir speichern nur Bezirk, Wohnfläche, Kaltmiete und ggf. das
+                  Baualter — <strong>keine</strong> Adresse, keine E-Mail, keine
+                  IP. Hilft, die Datenlage über offizielle Quellen hinaus zu
+                  ergänzen. Anzeige erst nach Sichtprüfung.
+                </span>
+              </span>
+            </label>
+          </div>
+
           {e._form && (
             <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {e._form}
@@ -170,11 +231,22 @@ export function CheckForm() {
 
 function ResultPanel({ state }: { state: CheckFormState }) {
   if (!state.result) return null;
-  const { address, displayName, sizeSqm, monthlyRent, district, assessment } = state.result;
+  const { address, displayName, sizeSqm, monthlyRent, district, assessment, shared } =
+    state.result;
   const style = verdictStyle[assessment.verdict];
 
   return (
     <div className="grid gap-6">
+      {shared && (
+        <div className="flex items-start gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400">
+          <Heart className="mt-0.5 size-4 shrink-0" />
+          <span>
+            <strong>Danke für deinen Beitrag.</strong> Deine Miete wurde anonym zur
+            Sichtprüfung gespeichert und erscheint nach Freigabe in der Datenbasis.
+          </span>
+        </div>
+      )}
+
       {/* Verdict */}
       <Card className={`w-full ring-2 ${style.ring}`}>
         <CardHeader>

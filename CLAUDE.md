@@ -17,15 +17,20 @@ Live: https://mietcheck-map.vercel.app · Repo: https://github.com/Hendrik-srs/m
 
 **Live (✅):** Phase 1 (Setup) · 2.1 (12 Bezirks-Geometrien) · 2.2 (IBB-Mietdaten 2012–25)
 · 3.1–3.4 (`/karte` mit Heatmap + Detail-Sheet) · 5.1 (Historie) · 5.2 (Trend-Chart)
-· 4.1–4.4 MVP (`/check` Fairness-Check) · Keep-Alive (Cron + Heartbeat)
+· 4.1–4.4 MVP + 4.5 (`/check` Fairness-Check inkl. anonymem Opt-in-Beitrag)
+· Keep-Alive (Cron + Heartbeat)
 
 **Was als nächstes ansteht** (in Prioritätsreihenfolge):
-1. **Phase 4.5** — anonyme Crowdsourced-Mieten (neue Tabelle + Moderations-Flow)
-2. **Phase 2.2b** — Mietspiegel 2024 ingestieren (rechtssichere Mietpreisbremsen-Logik)
-3. **Phase 5.3 + 5.4** — SEO-Bezirks-Seiten + öffentliche Quellen-Seite
-4. **Phase 2.1b** — Berliner Ortsteile (~100 Polygone, feinerer Lookup)
-5. **Phase 6** — München/Hamburg/Köln
-6. **Phase 3.5** — Stadt-Wechsel-UI (sobald Phase 6 läuft)
+1. **Phase 2.2b** — Mietspiegel 2024 ingestieren (rechtssichere Mietpreisbremsen-Logik)
+2. **Phase 5.3 + 5.4** — SEO-Bezirks-Seiten + öffentliche Quellen-Seite
+3. **Phase 2.1b** — Berliner Ortsteile (~100 Polygone, feinerer Lookup)
+4. **Phase 6** — München/Hamburg/Köln
+5. **Phase 3.5** — Stadt-Wechsel-UI (sobald Phase 6 läuft)
+6. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict einbinden, sobald Volumen da
+
+**Operative Notiz:** Eingehende Crowdsourced-Submissions liegen als
+`status='pending'` in `crowdsourced_rents`. Review im Supabase-Studio:
+Status auf `approved` setzen → Eintrag wird public-readable.
 
 → **Details aller offenen Phasen:** [docs/ROADMAP.md](docs/ROADMAP.md)
 → **Was/Wie/Warum bei fertigen Phasen:** [docs/BUILD_EXPLANATION.md](docs/BUILD_EXPLANATION.md)
@@ -50,21 +55,24 @@ src/
 │   └── map/                      # berlin-map(-inner).tsx + rent-history-chart.tsx
 └── lib/
     ├── geocoding.ts              # Nominatim-Wrapper
-    ├── data/{districts,fairness}.ts
+    ├── data/{districts,fairness,crowdsourced}.ts
     └── supabase/{browser,server,admin}.ts
 
 scripts/ingest/                   # berlin-districts.ts, berlin-ibb.ts
-supabase/migrations/              # 0001..0007 (manuell im SQL Editor anwenden)
+supabase/migrations/              # 0001..0008 (manuell im SQL Editor anwenden)
 .github/workflows/keep-alive.yml  # Daily Ping + Heartbeat-Commit alle 30 Tage
 ```
 
 **Tabellen:** `cities` · `districts` (MULTIPOLYGON) · `data_sources` ·
-`rent_data_points` (Long-Format pro source × district × period × metric).
+`rent_data_points` (Long-Format pro source × district × period × metric) ·
+`crowdsourced_rents` (anonyme Opt-in-Submissions, RLS public-read nur für
+`status='approved'`).
 RLS aktiviert, public-read, Writes nur via admin-Client.
 
 **RPCs:** `upsert_city/district/rent_data_point` · `get_districts_geojson(city_id)`
 (GeoJSON inkl. `rent_history`) · `find_district_by_point(city_id, lon, lat)`
-(`ST_Covers`, gibt Bezirk + aktuelle Miete zurück).
+(`ST_Covers`, gibt Bezirk + aktuelle Miete zurück) · `submit_crowdsourced_rent`
+(Service-Role-only, validiert + insert als pending).
 
 ## Konventionen & Regeln
 
