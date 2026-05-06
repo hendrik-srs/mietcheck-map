@@ -1,3 +1,5 @@
+Workflow-Guide → docs/WORKFLOW.md
+
 @AGENTS.md
 
 # MietCheck Map — Projekt-Kontext für Claude
