@@ -3,12 +3,18 @@
 import { z } from "zod";
 
 import { findDistrictByPoint, assessFairness } from "@/lib/data/fairness";
-import { submitCrowdsourcedRent } from "@/lib/data/crowdsourced";
+import {
+  submitCrowdsourcedRent,
+  buildingYearToBracket,
+} from "@/lib/data/crowdsourced";
+import {
+  findMietspiegelRow,
+  assessMietspiegel,
+  inferWestOstFromBezirk,
+} from "@/lib/data/mietspiegel";
 import { geocodeAddressInBerlin } from "@/lib/geocoding";
 import type { FairnessAssessment, DistrictRentLookup } from "@/lib/data/fairness";
-import type { BuildingAgeBracket } from "@/lib/data/crowdsourced";
-
-const buildingAgeValues = ["vor_1949", "1949_1990", "1991_2010", "nach_2010"] as const;
+import type { MietspiegelAssessment } from "@/lib/data/mietspiegel";
 
 const schema = z.object({
   address: z.string().trim().min(5, "Bitte vollständige Adresse eingeben."),
@@ -20,9 +26,9 @@ const schema = z.object({
     .number()
     .gt(50, "Miete zu niedrig.")
     .lt(20000, "Miete zu hoch."),
-  buildingAge: z.preprocess(
+  buildingYear: z.preprocess(
     (v) => (v === "" || v == null ? undefined : v),
-    z.enum(buildingAgeValues).optional(),
+    z.coerce.number().int().min(1800).max(2099).optional(),
   ),
 });
 
@@ -30,13 +36,15 @@ type FormValues = {
   address: string;
   sizeSqm: string;
   monthlyRent: string;
-  buildingAge: string;
+  buildingYear: string;
   share: boolean;
 };
 
 export interface CheckFormState {
   status: "idle" | "error" | "success";
-  errors?: Partial<Record<"address" | "sizeSqm" | "monthlyRent" | "_form", string>>;
+  errors?: Partial<
+    Record<"address" | "sizeSqm" | "monthlyRent" | "buildingYear" | "_form", string>
+  >;
   // Echo back what the user typed so the form keeps its values after a failed submit.
   values?: FormValues;
   result?: {
@@ -44,8 +52,10 @@ export interface CheckFormState {
     displayName: string;
     sizeSqm: number;
     monthlyRent: number;
+    buildingYear: number | null;
     district: DistrictRentLookup;
     assessment: FairnessAssessment;
+    mietspiegel: MietspiegelAssessment | null;
     shared: boolean;
   };
 }
@@ -55,12 +65,12 @@ export async function runFairnessCheck(
   formData: FormData,
 ): Promise<CheckFormState> {
   const rawShare = formData.get("share");
-  const rawBuildingAge = formData.get("buildingAge");
+  const rawBuildingYear = formData.get("buildingYear");
   const raw = {
     address: String(formData.get("address") ?? ""),
     sizeSqm: String(formData.get("sizeSqm") ?? ""),
     monthlyRent: String(formData.get("monthlyRent") ?? ""),
-    buildingAge: typeof rawBuildingAge === "string" ? rawBuildingAge : "",
+    buildingYear: typeof rawBuildingYear === "string" ? rawBuildingYear : "",
     share: rawShare === "on" || rawShare === "true",
   };
 
@@ -74,12 +84,13 @@ export async function runFairnessCheck(
         address: flat.address?.[0],
         sizeSqm: flat.sizeSqm?.[0],
         monthlyRent: flat.monthlyRent?.[0],
+        buildingYear: flat.buildingYear?.[0],
       },
     };
   }
 
   const { address, sizeSqm, monthlyRent } = parsed.data;
-  const buildingAge: BuildingAgeBracket | null = parsed.data.buildingAge ?? null;
+  const buildingYear: number | null = parsed.data.buildingYear ?? null;
 
   let geocoded;
   try {
@@ -136,6 +147,27 @@ export async function runFairnessCheck(
 
   const assessment = assessFairness(monthlyRent, sizeSqm, district.rentMedian);
 
+  // Mietspiegel-Vergleich nur möglich, wenn (a) wir die Wohnlage haben und
+  // (b) der User ein Baujahr angegeben hat. Bei Lookup-Fehlern fallen wir
+  // still auf null zurück — das verändert das IBB-Verdict nicht.
+  let mietspiegel: MietspiegelAssessment | null = null;
+  if (district.wohnlage && buildingYear != null) {
+    try {
+      const westOst = inferWestOstFromBezirk(district.districtName);
+      const row = await findMietspiegelRow(
+        district.wohnlage,
+        buildingYear,
+        sizeSqm,
+        westOst,
+      );
+      if (row) {
+        mietspiegel = assessMietspiegel(monthlyRent, sizeSqm, row);
+      }
+    } catch (e) {
+      console.error("[check] mietspiegel lookup failed", e);
+    }
+  }
+
   let shared = false;
   if (raw.share) {
     try {
@@ -143,7 +175,8 @@ export async function runFairnessCheck(
         districtId: district.districtId,
         sizeSqm,
         monthlyRentEur: monthlyRent,
-        buildingAgeBracket: buildingAge,
+        buildingAgeBracket:
+          buildingYear == null ? null : buildingYearToBracket(buildingYear),
       });
       shared = true;
     } catch (e) {
@@ -160,8 +193,10 @@ export async function runFairnessCheck(
       displayName: geocoded.displayName,
       sizeSqm,
       monthlyRent,
+      buildingYear,
       district,
       assessment,
+      mietspiegel,
       shared,
     },
   };

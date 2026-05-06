@@ -16,25 +16,32 @@ Ziel, geplante Umsetzung, ggf. Abhängigkeiten.
   Ortsteil-Ebene statt Bezirk)
 - Aktuell nicht blockierend — Fairness-Check funktioniert auf Bezirks-Ebene
 
-### Schritt 2.2b — Mietspiegel 2024 ingestieren *(NEU, hohe Priorität)*
-- Berliner Mietspiegel 2024 als zusätzliche Quelle für Bestandsmieten
-- Tabellenstruktur: Wohnlage × Baualter × Wohnungsgröße → ortsübliche
-  Vergleichsmiete
-- Ziel: rechtssichere Mietpreisbremsen-Logik im Fairness-Check
-  (aktueller Vergleich nur gegen IBB-Angebotsmieten-Median)
-- Voraussetzung für vollwertige Phase 4.3 (gesetzliche Rückforderungs-
-  Berechnung statt nur Markt-Vergleich)
+### Schritt 2.2b — Mietspiegel 2024 ingestieren *(live ✅)*
+- ✅ Berliner Mietspiegel 2024 als zusätzliche Quelle (163 Tabellenzeilen,
+  gemeinfrei nach §5 UrhG, eingecheckt als JSON)
+- ✅ Wohnlagen-Adress-Lookup aus dem Geoportal-WFS (≈401k Adressen,
+  dl-de-zero-2.0)
+- ✅ `find_mietspiegel_2024_row(wohnlage, baujahr, sqm, west_ost)` RPC
+- ✅ `/check` zeigt zusätzlich Mietspiegel-Spanne mit Position der Miete +
+  Mietpreisbremsen-Hinweis ab Mittelwert + 10 %
+- West/Ost-Sonderfall (1973–1990) wird konservativ pro Bezirk inferiert
+  (Straßenverzeichnis aus Amtsblatt nicht maschinenlesbar — out-of-scope MVP)
 
 ### Schritt 2.3 — Destatis-Trend-Daten *(optional)*
 - Destatis GENESIS-API: Verbraucherpreisindex Wohnen, monatlich
 - Aktuell verzichtbar, weil IBB-Historie 2012–2025 alles liefert
 - Sinnvoll falls Multi-City: Destatis-Daten gibt's bundesweit
 
-### Schritt 2.4 — Auto-Ingestion via GitHub Actions
-- Cron-Workflow für jährliche Re-Ingestion (IBB veröffentlicht jeden
-  Frühling den neuen Wohnungsmarktbericht)
-- Aktuell: manuell `npm run ingest:berlin-ibb` einmal pro Jahr
-- Existierender `keep-alive.yml` ist NUR für Aktivität, nicht Ingestion
+### Schritt 2.4 — Auto-Ingestion via GitHub Actions *(live ✅)*
+- ✅ `auto-ingest.yml` — monatlich am 4. um 02:30 UTC läuft `npm run ingest:all`
+  (Districts, Wohnlagen, IBB, Mietspiegel). Idempotent, partielle Erfolge ok
+- ✅ Daily Drift-Check: probt IBB-2026/27/28 + Mietspiegel-2026/27/28 PDF-URLs.
+  Bei 200 OK → öffnet GitHub-Issue "neue Quelle verfügbar" (max. 1 offen)
+- ✅ Failure-Mode: Job-Failure öffnet automatisch Issue mit Run-URL — kein
+  externer Service, keine Kosten
+- ✅ Manuell triggerbar via workflow_dispatch (Ingest oder Drift-Check)
+- **Setup-Schritt**: Repo-Secrets `NEXT_PUBLIC_SUPABASE_URL` und
+  `SUPABASE_SECRET_KEY` einmalig anlegen
 
 ---
 
@@ -131,9 +138,9 @@ In Reihenfolge der Realisierbarkeit:
 
 (Quelle: [`../CLAUDE.md`](../CLAUDE.md) Status-Sektion)
 
-1. **Phase 2.2b** — Mietspiegel 2024 ingestieren (für rechtssichere Logik)
-2. **Phase 5.3 + 5.4** — SEO-Bezirks-Seiten + Quellen-Seite
-3. **Phase 2.1b** — Berliner Ortsteile (feinerer Lookup)
-4. **Phase 6** — München/Hamburg/Köln
-5. **Phase 3.5** — Stadt-Wechsel-UI (mit Phase 6)
-6. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict, sobald Volumen da
+1. **Phase 5.3 + 5.4** — SEO-Bezirks-Seiten + Quellen-Seite
+2. **Phase 2.1b** — Berliner Ortsteile (feinerer Lookup)
+3. **Phase 6** — München/Hamburg/Köln
+4. **Phase 3.5** — Stadt-Wechsel-UI (mit Phase 6)
+5. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict, sobald Volumen da
+6. **Phase 4.6 (optional)** — Sondermerkmale-Slider im Mietspiegel-Vergleich

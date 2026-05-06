@@ -43,3 +43,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ingest staging artifacts (raw PDFs/extracted text). Only the curated
+# JSON file is checked in; the source PDF is pulled fresh on demand.
+scripts/ingest/data/*.pdf
+scripts/ingest/data/*.txt

@@ -13,6 +13,13 @@ export interface DistrictRentLookup {
   rentSourceName: string | null;
   rentSourcePublisher: string | null;
   rentSourceUrl: string | null;
+  /** "einfach" / "mittel" / "gut" — null wenn berlin_wohnlagen leer ist */
+  wohnlage: "einfach" | "mittel" | "gut" | null;
+  wohnlageStrasse: string | null;
+  wohnlageHausnummer: string | null;
+  wohnlagePlz: string | null;
+  /** Distanz in Metern zur nächsten klassifizierten Adresse */
+  wohnlageDistanceM: number | null;
 }
 
 interface RpcRow {
@@ -28,6 +35,11 @@ interface RpcRow {
   rent_source_name: string | null;
   rent_source_publisher: string | null;
   rent_source_url: string | null;
+  wohnlage: "einfach" | "mittel" | "gut" | null;
+  wohnlage_strasse: string | null;
+  wohnlage_hausnummer: string | null;
+  wohnlage_plz: string | null;
+  wohnlage_distance_m: number | string | null;
 }
 
 export async function findDistrictByPoint(
@@ -60,6 +72,12 @@ export async function findDistrictByPoint(
     rentSourceName: row.rent_source_name,
     rentSourcePublisher: row.rent_source_publisher,
     rentSourceUrl: row.rent_source_url,
+    wohnlage: row.wohnlage,
+    wohnlageStrasse: row.wohnlage_strasse,
+    wohnlageHausnummer: row.wohnlage_hausnummer,
+    wohnlagePlz: row.wohnlage_plz,
+    wohnlageDistanceM:
+      row.wohnlage_distance_m == null ? null : Number(row.wohnlage_distance_m),
   };
 }
 

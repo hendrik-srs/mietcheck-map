@@ -13,6 +13,18 @@ export const buildingAgeLabels: Record<BuildingAgeBracket, string> = {
   nach_2010: "Nach 2010 (Neubau)",
 };
 
+/**
+ * Mappt ein konkretes Baujahr auf den groberen Bracket, der in der
+ * crowdsourced_rents-Tabelle gespeichert wird. Erlaubt der UI ein einziges
+ * Baujahr-Feld statt zwei separaten Inputs.
+ */
+export function buildingYearToBracket(year: number): BuildingAgeBracket {
+  if (year < 1949) return "vor_1949";
+  if (year < 1991) return "1949_1990";
+  if (year < 2011) return "1991_2010";
+  return "nach_2010";
+}
+
 interface SubmitArgs {
   districtId: string;
   sizeSqm: number;
