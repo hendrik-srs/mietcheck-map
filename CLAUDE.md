@@ -19,16 +19,18 @@ Live: https://mietcheck-map.vercel.app · Repo: https://github.com/Hendrik-srs/m
 · 2.2b (Berliner Mietspiegel 2024 + 401k Wohnlagen-Adressen)
 · 2.4 (Auto-Ingestion via GitHub Actions, monatlich + täglicher Drift-Check)
 · 3.1–3.4 (`/karte` mit Heatmap + Detail-Sheet) · 5.1 (Historie) · 5.2 (Trend-Chart)
+· 5.3 (SEO-Seiten `/bezirk/[slug]` für alle 12 Bezirke + OG-Image + JSON-LD)
+· 5.4 (Öffentliche Quellen-Übersicht `/quellen`)
 · 4.1–4.4 MVP + 4.5 (`/check` mit IBB-Markt-Vergleich + Mietspiegel-Vergleich +
 anonymem Opt-in-Beitrag) · Keep-Alive (Cron + Heartbeat)
 
 **Was als nächstes ansteht** (in Prioritätsreihenfolge):
-1. **Phase 5.3 + 5.4** — SEO-Bezirks-Seiten + öffentliche Quellen-Seite
-2. **Phase 2.1b** — Berliner Ortsteile (~100 Polygone, feinerer Lookup)
-3. **Phase 6** — München/Hamburg/Köln
-4. **Phase 3.5** — Stadt-Wechsel-UI (sobald Phase 6 läuft)
-5. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict einbinden, sobald Volumen da
-6. **Phase 4.6 (optional)** — Sondermerkmale-/Spanneneinordnung-Slider im Mietspiegel-Vergleich
+1. **Phase 2.1b** — Berliner Ortsteile (~100 Polygone, feinerer Lookup)
+2. **Phase 6** — München/Hamburg/Köln
+3. **Phase 3.5** — Stadt-Wechsel-UI (sobald Phase 6 läuft)
+4. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict einbinden, sobald Volumen da
+5. **Phase 4.6 (optional)** — Sondermerkmale-/Spanneneinordnung-Slider im Mietspiegel-Vergleich
+6. **Phase 7** — Monetarisierung (Premium-PDF-Report, Affiliate, API-Access)
 
 **Operative Notizen**
 - **Crowdsourced-Submissions** liegen als `status='pending'` in `crowdsourced_rents`.
@@ -51,16 +53,24 @@ src/
 ├── app/
 │   ├── page.tsx                  # Landing
 │   ├── karte/page.tsx            # Karte (Server, lädt districts via rpc)
-│   └── check/                    # Fairness-Check
-│       ├── page.tsx              # Server Component
-│       ├── check-form.tsx        # Client (useActionState + Verdict)
-│       └── actions.ts            # "use server" + Zod
+│   ├── check/                    # Fairness-Check
+│   │   ├── page.tsx              # Server Component
+│   │   ├── check-form.tsx        # Client (useActionState + Verdict)
+│   │   └── actions.ts            # "use server" + Zod
+│   ├── bezirk/[slug]/
+│   │   ├── page.tsx              # SEO-Bezirks-Seite (JSON-LD Place)
+│   │   └── opengraph-image.tsx   # next/og PNG pro Bezirk
+│   ├── quellen/page.tsx          # Datenquellen-Transparenz
+│   ├── sitemap.ts                # Sitemap (16 URLs)
+│   └── robots.ts
 ├── components/
+│   ├── site-header.tsx           # Shared Nav (Logo + Karte/Check/Quellen)
 │   ├── ui/                       # shadcn Komponenten
 │   └── map/                      # berlin-map(-inner).tsx + rent-history-chart.tsx
 └── lib/
+    ├── slugs.ts                  # Berlin-Bezirks-Slugs (build-time-known)
     ├── geocoding.ts              # Nominatim-Wrapper
-    ├── data/{districts,fairness,crowdsourced}.ts
+    ├── data/{districts,fairness,crowdsourced,mietspiegel,sources}.ts
     └── supabase/{browser,server,admin}.ts
 
 scripts/ingest/                   # berlin-districts.ts, berlin-ibb.ts,

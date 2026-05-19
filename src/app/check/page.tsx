@@ -1,7 +1,7 @@
-import Link from "next/link";
-import { Map, Scale } from "lucide-react";
+import { Scale } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { SiteHeader } from "@/components/site-header";
 import { CheckForm } from "./check-form";
 
 export const metadata = {
@@ -13,20 +13,7 @@ export const metadata = {
 export default function CheckPage() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-10">
-        <div className="mx-auto max-w-3xl px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Map className="size-5 text-primary" />
-            MietCheck Map
-          </Link>
-          <Link
-            href="/karte"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Karte
-          </Link>
-        </div>
-      </header>
+      <SiteHeader width="3xl" />
 
       <main className="mx-auto w-full max-w-3xl px-6 py-12">
         <div className="mb-8">

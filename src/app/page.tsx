@@ -2,7 +2,9 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SiteHeader } from "@/components/site-header";
 import { Map, Scale, TrendingUp, ShieldCheck, Database, Code2 } from "lucide-react";
+import { BERLIN_BEZIRKE } from "@/lib/slugs";
 
 const features = [
   {
@@ -39,32 +41,9 @@ const sources = [
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Top nav */}
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-10">
-        <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Map className="size-5 text-primary" />
-            MietCheck Map
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/karte"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Karte
-            </Link>
-            <Link
-              href="/check"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Fairness-Check
-            </Link>
-            <Badge variant="secondary" className="text-xs">
-              in Entwicklung · v0.1
-            </Badge>
-          </div>
-        </div>
-      </header>
+      <SiteHeader width="6xl" showBadge />
+
+
 
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-6 pt-20 pb-16 text-center sm:text-left">
@@ -178,19 +157,40 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="mt-auto border-t border-border/60">
-        <div className="mx-auto max-w-6xl px-6 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-sm text-muted-foreground">
-          <p>
-            MietCheck Map · Open-Source-Projekt · {new Date().getFullYear()}
-          </p>
-          <div className="flex gap-4">
-            <a
-              href="https://github.com/Hendrik-srs/mietcheck-map"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-foreground inline-flex items-center gap-1"
-            >
-              <Code2 className="size-4" /> Source-Code
-            </a>
+        <div className="mx-auto max-w-6xl px-6 py-10 grid gap-8 sm:grid-cols-[1fr_auto] text-sm">
+          {/* Berliner Bezirke — internal links, helps SEO + accessibility. */}
+          <div>
+            <p className="font-medium mb-3">Mieten nach Berliner Bezirk</p>
+            <ul className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 text-muted-foreground">
+              {BERLIN_BEZIRKE.map(({ slug, name }) => (
+                <li key={slug}>
+                  <Link
+                    href={`/bezirk/${slug}`}
+                    className="hover:text-foreground transition-colors"
+                  >
+                    {name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="grid gap-3 text-muted-foreground sm:text-right">
+            <p>
+              MietCheck Map · Open-Source-Projekt · {new Date().getFullYear()}
+            </p>
+            <div className="flex gap-4 sm:justify-end">
+              <Link href="/quellen" className="hover:text-foreground">
+                Quellen
+              </Link>
+              <a
+                href="https://github.com/Hendrik-srs/mietcheck-map"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground inline-flex items-center gap-1"
+              >
+                <Code2 className="size-4" /> Source-Code
+              </a>
+            </div>
           </div>
         </div>
       </footer>

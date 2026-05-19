@@ -88,16 +88,23 @@ Ziel, geplante Umsetzung, ggf. Abhängigkeiten.
   (Multi-Bezirk-Overlay)
 - Recharts kann Multi-Line; Daten via `get_districts_geojson` schon vorhanden
 
-### Schritt 5.3 — SEO-Bezirks-Seiten
-- Pro Bezirk eigene Seite `/bezirk/[name]`
-- Strukturierte Daten (`schema.org/Place`), eigenes OG-Image
-- Sitemap.xml muss um Bezirks-Seiten erweitert werden
-- Inhalt: aktueller Median + Trend + Quellen + Link zur Karte
+### Schritt 5.3 — SEO-Bezirks-Seiten *(live ✅)*
+- ✅ `/bezirk/[slug]` mit `generateStaticParams` für alle 12 Berliner
+  Bezirke; build-time-known slug→name Mapping in `src/lib/slugs.ts`
+- ✅ Inhalt: aktueller Median + Vergleich zum Stadt-Durchschnitt +
+  RentHistoryChart + Quellen-Box + interne Links zu Karte/Check
+- ✅ Strukturierte Daten als `schema.org/Place` (JSON-LD inline)
+- ✅ Dynamisches OG-Image via `next/og` (`opengraph-image.tsx`) pro Bezirk
+- ✅ Sitemap-Erweiterung um alle Bezirks-URLs
+- ✅ Bezirks-Footer-Liste auf Landing-Page für interne Verlinkung
 
-### Schritt 5.4 — Quellen-Transparenz-Seite
-- Route `/quellen`
-- Tabelle aller `data_sources` mit Lizenz, Datum, Link
-- Aktuell ist die Quellenangabe nur im Detail-Sheet pro Bezirk sichtbar
+### Schritt 5.4 — Quellen-Transparenz-Seite *(live ✅)*
+- ✅ Route `/quellen` mit Liste aller `data_sources` aus der DB, gruppiert
+  nach `source_type` (Marktbericht, Mietspiegel, Open Data, …)
+- ✅ Pro Quelle: Name, Herausgeber, Lizenz, reference_date, fetched_at,
+  Notes, Original-Link
+- ✅ Lizenz-Erklärung (dl-de-zero-2.0, §5 UrhG) am Fuß
+- ✅ Globaler SiteHeader-Link auf jeder Seite
 
 ---
 
@@ -138,9 +145,9 @@ In Reihenfolge der Realisierbarkeit:
 
 (Quelle: [`../CLAUDE.md`](../CLAUDE.md) Status-Sektion)
 
-1. **Phase 5.3 + 5.4** — SEO-Bezirks-Seiten + Quellen-Seite
-2. **Phase 2.1b** — Berliner Ortsteile (feinerer Lookup)
-3. **Phase 6** — München/Hamburg/Köln
-4. **Phase 3.5** — Stadt-Wechsel-UI (mit Phase 6)
-5. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict, sobald Volumen da
-6. **Phase 4.6 (optional)** — Sondermerkmale-Slider im Mietspiegel-Vergleich
+1. **Phase 2.1b** — Berliner Ortsteile (feinerer Lookup)
+2. **Phase 6** — München/Hamburg/Köln
+3. **Phase 3.5** — Stadt-Wechsel-UI (mit Phase 6)
+4. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict, sobald Volumen da
+5. **Phase 4.6 (optional)** — Sondermerkmale-Slider im Mietspiegel-Vergleich
+6. **Phase 7** — Monetarisierung (PDF-Report, Affiliate, API-Access)
