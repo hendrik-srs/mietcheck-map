@@ -46,6 +46,13 @@ anonymem Opt-in-Beitrag) · Keep-Alive (Cron + Heartbeat)
   aber Moderation muss alles per Hand filtern. Fix: Server-Action und/oder
   RPC sollten Mietpreis pro m² gegen ein realistisches Band prüfen
   (z.B. 3 €/m² – 60 €/m²) und sonst mit Validation-Fehler ablehnen.
+- **Adress-Eingabe in `/check` hat kein Autocomplete**: User tippt frei in
+  ein Textfeld; Placeholder verschwindet beim Tippen, sodass Format
+  ("Straße Hausnr., PLZ Berlin") leicht vergessen wird und Tippfehler den
+  Nominatim-Lookup ins Leere laufen lassen. Fix: Live-Autocomplete via
+  Nominatim Search-API (mit Debounce) oder Photon (Komoot, basiert auf
+  Nominatim, hat Autocomplete out-of-the-box). Bonus: Lat/Lon kommt direkt
+  aus dem Vorschlag, kein zweiter Geocode-Roundtrip nötig.
 - **Pankow-Polygon Label-Position**: auf `/karte` zeigt Pankow gelegentlich
   nur den Namen ohne Farbfüllung an, und das Label sitzt dann an einer
   falschen Stelle (vermutlich Pankow-Centroid-Berechnung bei MultiPolygon
