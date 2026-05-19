@@ -39,6 +39,24 @@ anonymem Opt-in-Beitrag) · Keep-Alive (Cron + Heartbeat)
   `NEXT_PUBLIC_SUPABASE_URL` und `SUPABASE_SECRET_KEY` (Settings → Secrets and
   variables → Actions). Workflow läuft sonst automatisch monatlich.
 
+**Bekannte Caveats / TODOs**
+- **West/Ost-Sonderfall im Mietspiegel** (Bj. 1973–1990): konservativ pro Bezirk
+  inferiert, weil das offizielle Straßenverzeichnis nur als PDF im Amtsblatt
+  existiert. Ungenauigkeit ~5 % der Wohnungen mit diesem Baujahr. Fix wäre
+  Phase 4.6 oder ein eigenes Straßenverzeichnis-Ingest.
+- **Sondermerkmale im Mietspiegel-Verdict** (Aufzug, EBK, energetisch …) werden
+  aktuell nicht berücksichtigt. Verdict prüft nur Spannenposition + Mittel+10 %.
+  Phase 4.6 würde einen Spanneneinordnungs-Slider einführen.
+- **Keep-alive Runner-Allocation**: am 06.05.2026 einmal cancelled (GitHub-Runner-
+  Pool-Glitch, kein Code-Bug). Gehärtet mit zweitem Slot um 18:17 UTC. Wenn
+  beides an einem Tag failt → Supabase erst nach 7 Tagen ohne Ping pausiert.
+- **`/karte` nutzt nicht SiteHeader**: absichtlich, weil die Map ein eigenes
+  Overlay-Pattern (pointer-events) hat. Bei künftigen Header-Änderungen
+  Map-Header separat anfassen.
+- **Wohnlagen-Ingest dauert ~10 Min** wegen 401 095 Adressen × 2 000 pro Batch
+  über den WFS. Idempotent — Re-Run überschreibt in place. Auto-Ingest läuft
+  monatlich um 02:30 UTC, kein User-Impact.
+
 → **Details aller offenen Phasen:** [docs/ROADMAP.md](docs/ROADMAP.md)
 → **Was/Wie/Warum bei fertigen Phasen:** [docs/BUILD_EXPLANATION.md](docs/BUILD_EXPLANATION.md)
 
@@ -145,8 +163,8 @@ npm run ingest:all                       # alle 4 nacheinander (auto-ingest-Work
 2. Status-Sektion oben zeigt was live ist und was als nächstes ansteht.
    Letzter Commit gibt zusätzlichen Hinweis.
 3. User fragen, ob die Top-Priorität angegangen wird oder Sprung an andere Stelle
-4. Konkreten Schritt aus [ROADMAP](docs/ROADMAP.md) nehmen, eigene TodoWrite-Liste
-   bauen, abarbeiten
+4. Konkreten Schritt aus [ROADMAP](docs/ROADMAP.md) nehmen, eigene Task-Liste
+   bauen (`TaskCreate`/`TaskUpdate`), abarbeiten
 5. Pro Schritt: Commit + `git push origin HEAD:main` + visuelle Verifikation
 6. Vor Migrations-Anwendung auf User-Bestätigung warten
 
