@@ -40,6 +40,17 @@ anonymem Opt-in-Beitrag) · Keep-Alive (Cron + Heartbeat)
   variables → Actions). Workflow läuft sonst automatisch monatlich.
 
 **Bekannte Caveats / TODOs**
+- **Crowdsourced-Mieten ungeprüft auf Plausibilität**: `/check` mit
+  Opt-in-Häkchen akzeptiert aktuell jeden Wert (z.B. 1 € oder 100 Mio €) und
+  speichert ihn als `pending`. Verzerrt zwar nicht die Karte (Approved-Flow),
+  aber Moderation muss alles per Hand filtern. Fix: Server-Action und/oder
+  RPC sollten Mietpreis pro m² gegen ein realistisches Band prüfen
+  (z.B. 3 €/m² – 60 €/m²) und sonst mit Validation-Fehler ablehnen.
+- **Pankow-Polygon Label-Position**: auf `/karte` zeigt Pankow gelegentlich
+  nur den Namen ohne Farbfüllung an, und das Label sitzt dann an einer
+  falschen Stelle (vermutlich Pankow-Centroid-Berechnung bei MultiPolygon
+  mit einer Exklave, die ST_Centroid außerhalb der Hauptfläche legt). Bei
+  Refactor von MapLibre-Layern oder Label-Layern prüfen.
 - **West/Ost-Sonderfall im Mietspiegel** (Bj. 1973–1990): konservativ pro Bezirk
   inferiert, weil das offizielle Straßenverzeichnis nur als PDF im Amtsblatt
   existiert. Ungenauigkeit ~5 % der Wohnungen mit diesem Baujahr. Fix wäre
