@@ -15,8 +15,9 @@ Live: https://mietcheck-map.vercel.app · Repo: https://github.com/Hendrik-srs/m
 
 ## Aktueller Stand
 
-**Live (✅):** Phase 1 (Setup) · 2.1 (12 Bezirks-Geometrien) · 2.2 (IBB-Mietdaten 2012–25)
-· 2.2b (Berliner Mietspiegel 2024 + 401k Wohnlagen-Adressen)
+**Live (✅):** Phase 1 (Setup) · 2.1 (12 Bezirks-Geometrien)
+· 2.1b (96 Ortsteil-Geometrien, feinerer Adress-Lookup)
+· 2.2 (IBB-Mietdaten 2012–25) · 2.2b (Berliner Mietspiegel 2024 + 401k Wohnlagen-Adressen)
 · 2.4 (Auto-Ingestion via GitHub Actions, monatlich + täglicher Drift-Check)
 · 3.1–3.4 (`/karte` mit Heatmap + Detail-Sheet) · 5.1 (Historie) · 5.2 (Trend-Chart)
 · 5.3 (SEO-Seiten `/bezirk/[slug]` für alle 12 Bezirke + OG-Image + JSON-LD)
@@ -25,12 +26,11 @@ Live: https://mietcheck-map.vercel.app · Repo: https://github.com/Hendrik-srs/m
 anonymem Opt-in-Beitrag) · Keep-Alive (Cron + Heartbeat)
 
 **Was als nächstes ansteht** (in Prioritätsreihenfolge):
-1. **Phase 2.1b** — Berliner Ortsteile (~100 Polygone, feinerer Lookup)
-2. **Phase 6** — München/Hamburg/Köln
-3. **Phase 3.5** — Stadt-Wechsel-UI (sobald Phase 6 läuft)
-4. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict einbinden, sobald Volumen da
-5. **Phase 4.6 (optional)** — Sondermerkmale-/Spanneneinordnung-Slider im Mietspiegel-Vergleich
-6. **Phase 7** — Monetarisierung (Premium-PDF-Report, Affiliate, API-Access)
+1. **Phase 6** — München/Hamburg/Köln
+2. **Phase 3.5** — Stadt-Wechsel-UI (sobald Phase 6 läuft)
+3. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict einbinden, sobald Volumen da
+4. **Phase 4.6 (optional)** — Sondermerkmale-/Spanneneinordnung-Slider im Mietspiegel-Vergleich
+5. **Phase 7** — Monetarisierung (Premium-PDF-Report, Affiliate, API-Access)
 
 **Operative Notizen**
 - **Crowdsourced-Submissions** liegen als `status='pending'` in `crowdsourced_rents`.
@@ -91,29 +91,32 @@ src/
     ├── data/{districts,fairness,crowdsourced,mietspiegel,sources}.ts
     └── supabase/{browser,server,admin}.ts
 
-scripts/ingest/                   # berlin-districts.ts, berlin-ibb.ts,
-                                  # berlin-wohnlagen.ts, berlin-mietspiegel-2024.ts
+scripts/ingest/                   # berlin-districts.ts, berlin-ortsteile.ts,
+                                  # berlin-ibb.ts, berlin-wohnlagen.ts,
+                                  # berlin-mietspiegel-2024.ts
                                   # data/berlin-mietspiegel-2024.json (eingecheckt)
-supabase/migrations/              # 0001..0011 (manuell im SQL Editor anwenden)
+supabase/migrations/              # 0001..0012 (manuell im SQL Editor anwenden)
 .github/workflows/keep-alive.yml  # Daily Ping + Heartbeat-Commit alle 30 Tage
 .github/workflows/auto-ingest.yml # Monatliche Re-Ingestion + täglicher Drift-Check
 ```
 
-**Tabellen:** `cities` · `districts` (MULTIPOLYGON) · `data_sources` ·
-`rent_data_points` (Long-Format pro source × district × period × metric) ·
-`crowdsourced_rents` (anonyme Opt-in-Submissions, RLS public-read nur für
-`status='approved'`) · `berlin_wohnlagen` (≈401k Adress-Punkte + Wohnlage,
-GiST-Index für KNN-Lookup) · `berlin_mietspiegel_2024` (163 Zeilen aus dem
-offiziellen Mietspiegel-PDF).
+**Tabellen:** `cities` · `districts` (MULTIPOLYGON, hierarchisch: 12 Bezirke +
+96 Ortsteile mit `parent_id` → Bezirk) · `data_sources` · `rent_data_points`
+(Long-Format pro source × district × period × metric, ausschließlich auf
+Bezirks-Granularität) · `crowdsourced_rents` (anonyme Opt-in-Submissions, RLS
+public-read nur für `status='approved'`) · `berlin_wohnlagen` (≈401k
+Adress-Punkte + Wohnlage, GiST-Index für KNN-Lookup) · `berlin_mietspiegel_2024`
+(163 Zeilen aus dem offiziellen Mietspiegel-PDF).
 RLS aktiviert, public-read, Writes nur via admin-Client.
 
 **RPCs:** `upsert_city/district/rent_data_point` · `get_districts_geojson(city_id)`
-(GeoJSON inkl. `rent_history`) · `find_district_by_point(city_id, lon, lat)`
-(`ST_Covers` + nearest-Wohnlage; liefert Bezirk + IBB-Median + Wohnlage in einem
-Roundtrip) · `find_mietspiegel_2024_row(wohnlage, baujahr, sqm, west_ost)`
-(passende Tabellenzeile) · `submit_crowdsourced_rent` (Service-Role-only, insert
-als pending) · `upsert_berlin_wohnlagen_batch`/`upsert_berlin_mietspiegel_2024_batch`
-(Bulk-Ingest via JSONB).
+(GeoJSON, gefiltert auf `level='bezirk'` damit Heatmap die 12 Polygone behält
++ `rent_history`) · `find_district_by_point(city_id, lon, lat)` (`ST_Covers`
+bevorzugt Ortsteil-Treffer, liefert zusätzlich `parent_district_*`; Rent-Join
+läuft über den Parent-Bezirk) · `find_mietspiegel_2024_row(wohnlage, baujahr,
+sqm, west_ost)` (passende Tabellenzeile) · `submit_crowdsourced_rent`
+(Service-Role-only, insert als pending) · `upsert_berlin_wohnlagen_batch`/
+`upsert_berlin_mietspiegel_2024_batch` (Bulk-Ingest via JSONB).
 
 ## Konventionen & Regeln
 
@@ -151,10 +154,11 @@ npm run start                     # Production-Server (lokal nach build)
 
 # Ingestion (idempotent, brauchen .env.local mit SUPABASE_SECRET_KEY)
 npm run ingest:berlin-districts          # Geoportal Berlin → 12 Bezirke
+npm run ingest:berlin-ortsteile          # Geoportal Berlin → 96 Ortsteile (parent_id = Bezirk)
 npm run ingest:berlin-ibb                # IBB Wohnungsmarktbericht → 168 rent points
 npm run ingest:berlin-wohnlagen          # WFS → ≈401k Adressen mit Wohnlage (~min)
 npm run ingest:berlin-mietspiegel-2024   # JSON-Datei → 163 Mietspiegel-Zeilen
-npm run ingest:all                       # alle 4 nacheinander (auto-ingest-Workflow)
+npm run ingest:all                       # alle 5 nacheinander (auto-ingest-Workflow)
 ```
 
 ## Was beim Session-Start zu tun ist

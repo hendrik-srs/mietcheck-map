@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Tooling-managed worktrees contain stale generated build output
+    // (Turbopack chunks etc.) that we never want to lint.
+    ".claude/**",
   ]),
 ]);
 

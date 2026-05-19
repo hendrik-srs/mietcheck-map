@@ -10,11 +10,14 @@ Ziel, geplante Umsetzung, ggf. Abhängigkeiten.
 
 ## Phase 2 — Datenpipeline (offene Schritte)
 
-### Schritt 2.1b — Berliner Ortsteile
-- ~100 feinere Polygone, gleiche Pipeline wie 2.1, andere GeoJSON-URL
-- Nutzen: präziserer Bezirk-Lookup im Fairness-Check (`ST_Covers` auf
-  Ortsteil-Ebene statt Bezirk)
-- Aktuell nicht blockierend — Fairness-Check funktioniert auf Bezirks-Ebene
+### Schritt 2.1b — Berliner Ortsteile *(live ✅)*
+- ✅ 96 Ortsteil-Polygone aus dem Geoportal Berlin (`lor_ortsteile.geojson`)
+  in `districts` mit `level='ortsteil'` und `parent_id` → Bezirk
+- ✅ `find_district_by_point` bevorzugt Ortsteil-Match und liefert
+  Parent-Bezirk mit; Rent-Join läuft weiter über den Bezirk
+- ✅ `get_districts_geojson` filtert auf `level='bezirk'`, damit die Heatmap
+  bei den 12 Bezirken bleibt
+- ✅ `/check` zeigt zusätzliche "Ortsteil"-Zeile in den Eingabe-Details
 
 ### Schritt 2.2b — Mietspiegel 2024 ingestieren *(live ✅)*
 - ✅ Berliner Mietspiegel 2024 als zusätzliche Quelle (163 Tabellenzeilen,
@@ -145,9 +148,8 @@ In Reihenfolge der Realisierbarkeit:
 
 (Quelle: [`../CLAUDE.md`](../CLAUDE.md) Status-Sektion)
 
-1. **Phase 2.1b** — Berliner Ortsteile (feinerer Lookup)
-2. **Phase 6** — München/Hamburg/Köln
-3. **Phase 3.5** — Stadt-Wechsel-UI (mit Phase 6)
-4. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict, sobald Volumen da
-5. **Phase 4.6 (optional)** — Sondermerkmale-Slider im Mietspiegel-Vergleich
-6. **Phase 7** — Monetarisierung (PDF-Report, Affiliate, API-Access)
+1. **Phase 6** — München/Hamburg/Köln
+2. **Phase 3.5** — Stadt-Wechsel-UI (mit Phase 6)
+3. **Phase 4.5+** — Crowdsourced-Mieten in Karte/Verdict, sobald Volumen da
+4. **Phase 4.6 (optional)** — Sondermerkmale-Slider im Mietspiegel-Vergleich
+5. **Phase 7** — Monetarisierung (PDF-Report, Affiliate, API-Access)

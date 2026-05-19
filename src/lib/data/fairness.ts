@@ -1,9 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 
 export interface DistrictRentLookup {
+  /**
+   * Feinster passender Treffer für die Adresse — kann ein Ortsteil sein
+   * (level='ortsteil') oder, falls keine Ortsteile ingestiert sind, ein
+   * Bezirk (level='bezirk').
+   */
   districtId: string;
   districtName: string;
   districtLevel: "bezirk" | "ortsteil" | "plz";
+  /**
+   * Bezirk, in dem der Treffer liegt. Bei Bezirks-Treffer identisch mit
+   * districtId/Name. Rent-Daten beziehen sich immer auf diese Granularität.
+   */
+  parentDistrictId: string;
+  parentDistrictName: string;
   rentMedian: number | null;
   rentSampleSize: number | null;
   rentPeriodStart: string | null;
@@ -26,6 +37,8 @@ interface RpcRow {
   district_id: string;
   district_name: string;
   district_level: "bezirk" | "ortsteil" | "plz";
+  parent_district_id: string;
+  parent_district_name: string;
   rent_median: number | string | null;
   rent_sample_size: number | null;
   rent_period_start: string | null;
@@ -63,6 +76,8 @@ export async function findDistrictByPoint(
     districtId: row.district_id,
     districtName: row.district_name,
     districtLevel: row.district_level,
+    parentDistrictId: row.parent_district_id,
+    parentDistrictName: row.parent_district_name,
     rentMedian: row.rent_median == null ? null : Number(row.rent_median),
     rentSampleSize: row.rent_sample_size,
     rentPeriodStart: row.rent_period_start,

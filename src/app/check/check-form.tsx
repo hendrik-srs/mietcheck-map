@@ -278,7 +278,7 @@ function ResultPanel({ state }: { state: CheckFormState }) {
           <div className={`rounded-lg ${style.bg} px-4 py-3 text-sm`}>
             <strong>{eur2(assessment.pricePerSqm)} / m²</strong> deine Miete{" "}
             vs. <strong>{eur2(assessment.comparisonMedian)} / m²</strong> Bezirks-Median in{" "}
-            <strong>{district.districtName}</strong>.
+            <strong>{district.parentDistrictName}</strong>.
             {assessment.monthlyOverpay > 0 && (
               <>
                 <br />
@@ -294,7 +294,7 @@ function ResultPanel({ state }: { state: CheckFormState }) {
       {mietspiegel && (
         <MietspiegelCard
           mietspiegel={mietspiegel}
-          districtName={district.districtName}
+          districtName={district.parentDistrictName}
           buildingYear={buildingYear}
         />
       )}
@@ -306,7 +306,10 @@ function ResultPanel({ state }: { state: CheckFormState }) {
         </CardHeader>
         <CardContent className="grid gap-3 text-sm">
           <Row label="Adresse" value={address} note={displayName} />
-          <Row label="Bezirk" value={district.districtName} />
+          <Row label="Bezirk" value={district.parentDistrictName} />
+          {district.districtLevel === "ortsteil" && (
+            <Row label="Ortsteil" value={district.districtName} />
+          )}
           {district.wohnlage && (
             <Row
               label="Wohnlage"

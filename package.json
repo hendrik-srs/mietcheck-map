@@ -8,10 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "ingest:berlin-districts": "tsx --env-file=.env.local scripts/ingest/berlin-districts.ts",
+    "ingest:berlin-ortsteile": "tsx --env-file=.env.local scripts/ingest/berlin-ortsteile.ts",
     "ingest:berlin-ibb": "tsx --env-file=.env.local scripts/ingest/berlin-ibb.ts",
     "ingest:berlin-wohnlagen": "tsx --env-file=.env.local scripts/ingest/berlin-wohnlagen.ts",
     "ingest:berlin-mietspiegel-2024": "tsx --env-file=.env.local scripts/ingest/berlin-mietspiegel-2024.ts",
-    "ingest:all": "npm run ingest:berlin-districts && npm run ingest:berlin-wohnlagen && npm run ingest:berlin-ibb && npm run ingest:berlin-mietspiegel-2024"
+    "ingest:all": "npm run ingest:berlin-districts && npm run ingest:berlin-ortsteile && npm run ingest:berlin-wohnlagen && npm run ingest:berlin-ibb && npm run ingest:berlin-mietspiegel-2024"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

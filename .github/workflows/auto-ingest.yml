@@ -75,7 +75,7 @@ jobs:
           # with a partially-updated DB rather than an all-or-nothing miss.
           # The data sources are independent, so partial success is fine.
           fail=0
-          for s in berlin-districts berlin-wohnlagen berlin-ibb berlin-mietspiegel-2024; do
+          for s in berlin-districts berlin-ortsteile berlin-wohnlagen berlin-ibb berlin-mietspiegel-2024; do
             echo "::group::ingest:$s"
             if npx tsx "scripts/ingest/$s.ts"; then
               echo "✓ $s done"

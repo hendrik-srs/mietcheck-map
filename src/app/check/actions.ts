@@ -140,7 +140,7 @@ export async function runFairnessCheck(
       status: "error",
       values: raw,
       errors: {
-        _form: `Für ${district.districtName} liegen aktuell keine Vergleichsmieten vor.`,
+        _form: `Für ${district.parentDistrictName} liegen aktuell keine Vergleichsmieten vor.`,
       },
     };
   }
@@ -150,10 +150,11 @@ export async function runFairnessCheck(
   // Mietspiegel-Vergleich nur möglich, wenn (a) wir die Wohnlage haben und
   // (b) der User ein Baujahr angegeben hat. Bei Lookup-Fehlern fallen wir
   // still auf null zurück — das verändert das IBB-Verdict nicht.
+  // West/Ost-Inferenz braucht den Bezirks-Namen (nicht den Ortsteil).
   let mietspiegel: MietspiegelAssessment | null = null;
   if (district.wohnlage && buildingYear != null) {
     try {
-      const westOst = inferWestOstFromBezirk(district.districtName);
+      const westOst = inferWestOstFromBezirk(district.parentDistrictName);
       const row = await findMietspiegelRow(
         district.wohnlage,
         buildingYear,
@@ -171,8 +172,10 @@ export async function runFairnessCheck(
   let shared = false;
   if (raw.share) {
     try {
+      // crowdsourced_rents speichert auf Bezirks-Ebene — IBB-Vergleiche
+      // existieren nur dort.
       await submitCrowdsourcedRent({
-        districtId: district.districtId,
+        districtId: district.parentDistrictId,
         sizeSqm,
         monthlyRentEur: monthlyRent,
         buildingAgeBracket:
